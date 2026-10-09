@@ -6,8 +6,8 @@ import { native, type IslandShape, type Notch, type Platform, type Settings } fr
 type Mode = "idle" | "compact" | "expanded";
 
 /** Mola com leve overshoot: a forma "escorre" e assenta, em vez de só redimensionar. */
-const LIQUID: Transition = { type: "spring", stiffness: 380, damping: 26, mass: 0.9 };
-const CONTENT: Transition = { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] };
+const LIQUID: Transition = { type: "spring", stiffness: 560, damping: 31, mass: 0.9 };
+const CONTENT: Transition = { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] };
 
 const HIDDEN = (notch: Notch): IslandShape => ({ width: notch.width * 0.5, height: 0, radius: 0, ear: 0 });
 
@@ -118,8 +118,8 @@ export function Island({ notch, activity, hovered, settings, platform }: IslandP
                 className="island-content"
                 style={{ width: pill.width, height: pill.height, left: `calc(50% - ${pill.width / 2}px)` }}
                 initial={{ opacity: 0, filter: "blur(8px)", scale: 0.94 }}
-                animate={{ opacity: 1, filter: "blur(0px)", scale: 1, transition: { ...CONTENT, delay: 0.06 } }}
-                exit={{ opacity: 0, filter: "blur(8px)", scale: 0.94, transition: { duration: 0.12 } }}
+                animate={{ opacity: 1, filter: "blur(0px)", scale: 1, transition: { ...CONTENT, delay: 0.03 } }}
+                exit={{ opacity: 0, filter: "blur(8px)", scale: 0.94, transition: { duration: 0.1 } }}
               >
                 {pillContent}
               </motion.div>
@@ -136,8 +136,8 @@ export function Island({ notch, activity, hovered, settings, platform }: IslandP
             className="glass-content"
             style={{ width: shape.width, height: shape.height, left: `calc(50% - ${shape.width / 2}px)` }}
             initial={{ opacity: 0, filter: "blur(8px)", scale: 0.94 }}
-            animate={{ opacity: 1, filter: "blur(0px)", scale: 1, transition: { ...CONTENT, delay: 0.06 } }}
-            exit={{ opacity: 0, filter: "blur(8px)", scale: 0.94, transition: { duration: 0.12 } }}
+            animate={{ opacity: 1, filter: "blur(0px)", scale: 1, transition: { ...CONTENT, delay: 0.03 } }}
+            exit={{ opacity: 0, filter: "blur(8px)", scale: 0.94, transition: { duration: 0.1 } }}
           >
             {glassContent}
           </motion.div>
