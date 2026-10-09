@@ -24,6 +24,27 @@ export type PlayerState = {
   volume: number;
 };
 
+export type Style = "black" | "translucent" | "glass";
+
+export type Settings = {
+  style: Style;
+  /** 0.6-1, só no Style Translucent */
+  opacity: number;
+  expandOn: "hover" | "click";
+  hoverDelayMs: number;
+  hideIdleWithoutNotch: boolean;
+  accent: "artwork" | "white";
+  haptics: boolean;
+  showMenuBarIcon: boolean;
+  /** "auto", "main" ou o nome da tela */
+  display: string;
+};
+
+export type Platform = { glassSupported: boolean };
+
+/** Forma da Island centrada no topo da janela, Ears incluídas. */
+export type IslandShape = { width: number; height: number; radius: number; ear: number };
+
 export type SpotifyAction = "playpause" | "next" | "previous";
 
 const on =
@@ -35,6 +56,16 @@ const on =
 export const native = {
   getNotch: () => invoke<Notch>("get_notch"),
   setIslandSize: (width: number, height: number) => invoke<void>("set_island_size", { width, height }),
+  getPlatform: () => invoke<Platform>("get_platform"),
+  listDisplays: () => invoke<string[]>("list_displays"),
+  /** `target` null recolhe o vidro de volta pra `rest` (Compact/Idle) e esconde. */
+  setGlass: (target: IslandShape | null, rest: IslandShape) => invoke<void>("set_glass", { target, rest }),
+  haptic: () => invoke<void>("haptic"),
+  showContextMenu: () => invoke<void>("show_context_menu"),
+  getSettings: () => invoke<Settings>("get_settings"),
+  setSettings: (value: Settings) => invoke<void>("set_settings", { value }),
+  getAutostart: () => invoke<boolean>("get_autostart"),
+  setAutostart: (enabled: boolean) => invoke<boolean>("set_autostart", { enabled }),
   spotifyState: () => invoke<PlayerState>("spotify_state"),
   spotifyControl: (action: SpotifyAction) => invoke<void>("spotify_control", { action }),
   spotifySeek: (position: number) => invoke<void>("spotify_seek", { position }),
@@ -42,6 +73,7 @@ export const native = {
   onNotch: on<Notch>("island://notch"),
   onHover: on<boolean>("island://hover"),
   onSpotify: on<PlayerState>("spotify://state"),
+  onSettings: on<Settings>("settings://changed"),
 };
 
 /** Assina um evento no useEffect sem vazar listener se o componente desmontar antes do `listen` resolver. */

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck e build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck e build do frontend
+        run: bun run build
+
+      - name: Checar o Rust
+        working-directory: src-tauri
+        run: cargo check --locked
+
+      - name: Prévia da versão
+        run: .github/scripts/next-version.sh | tee -a "$GITHUB_STEP_SUMMARY"

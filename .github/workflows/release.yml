@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    name: Calcular versão
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.next.outputs.release }}
+      version: ${{ steps.next.outputs.version }}
+      notes: ${{ steps.next.outputs.notes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # precisa do histórico e das tags
+
+      - id: next
+        run: .github/scripts/next-version.sh >> "$GITHUB_OUTPUT"
+
+      - name: Resumo
+        run: |
+          if [[ "${{ steps.next.outputs.release }}" == "true" ]]; then
+            echo "Release v${{ steps.next.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sem feat/fix/perf/refactor/ui desde a última tag: nada a lançar." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    name: Build e release (universal)
+    needs: version
+    if: needs.version.outputs.release == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      # a tag é a fonte da verdade da versão; o arquivo só é alterado dentro do build
+      - name: Aplicar versão
+        run: |
+          jq --arg v "${{ needs.version.outputs.version }}" '.version = $v' src-tauri/tauri.conf.json > tauri.conf.tmp
+          mv tauri.conf.tmp src-tauri/tauri.conf.json
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: bun run tauri
+          args: --target universal-apple-darwin
+          tagName: v${{ needs.version.outputs.version }}
+          releaseName: Dynamic Lite v${{ needs.version.outputs.version }}
+          releaseBody: ${{ needs.version.outputs.notes }}
+          releaseDraft: false
+          prerelease: false

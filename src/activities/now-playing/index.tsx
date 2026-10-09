@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useArtworkColor } from "../../hooks/useArtworkColor";
-import type { Notch } from "../../lib/native";
+import type { Settings } from "../../lib/native";
 import type { Activity } from "../types";
 import { Equalizer } from "./Equalizer";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "./Icons";
@@ -9,7 +9,8 @@ import { Volume } from "./Volume";
 import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
 
 const EXPANDED_WIDTH = 400;
-const EXPANDED_BODY = 190;
+/** cabeçalho + progresso + controles + volume + respiro inferior */
+const EXPANDED_BODY = 184;
 
 function Artwork({ url, size, radius }: { url: string; size: number; radius: number }) {
   return (
@@ -29,11 +30,11 @@ function Artwork({ url, size, radius }: { url: string; size: number; radius: num
   );
 }
 
-function Compact({ np, notch, color }: { np: NowPlayingControls; notch: Notch; color: string }) {
+function Compact({ np, side, height, color }: { np: NowPlayingControls; side: number; height: number; color: string }) {
   const { state } = np.playback;
-  const art = Math.max(16, notch.height - 12);
+  const art = Math.max(16, height - 12);
   return (
-    <div className="np-compact" style={{ paddingInline: (notch.height + 14 - art) / 2 }}>
+    <div className="np-compact" style={{ paddingInline: (side - art) / 2 }}>
       <Artwork url={state.track!.artworkUrl} size={art} radius={6} />
       <Equalizer playing={state.status === "playing"} color={color} height={Math.round(art * 0.6)} />
     </div>
@@ -55,12 +56,12 @@ function Button({ onClick, children, primary }: { onClick: () => void; children:
   );
 }
 
-function Expanded({ np, notch, color }: { np: NowPlayingControls; notch: Notch; color: string }) {
+function Expanded({ np, topInset, color }: { np: NowPlayingControls; topInset: number; color: string }) {
   const { state } = np.playback;
   const track = state.track!;
   const playing = state.status === "playing";
   return (
-    <div className="np-expanded" style={{ paddingTop: notch.height + 6 }}>
+    <div className="np-expanded" style={{ paddingTop: topInset }}>
       <div className="np-head">
         <Artwork url={track.artworkUrl} size={56} radius={12} />
         <div className="np-meta">
@@ -94,16 +95,17 @@ function Expanded({ np, notch, color }: { np: NowPlayingControls; notch: Notch; 
 }
 
 /** Now Playing do Spotify como Activity: live tocando, disponível no hover quando pausado. */
-export function useNowPlayingActivity(notch: Notch): Activity | null {
+export function useNowPlayingActivity(settings: Settings): Activity | null {
   const np = useNowPlaying();
   const { state } = np.playback;
-  const color = useArtworkColor(state.track?.artworkUrl);
+  const artworkColor = useArtworkColor(state.track?.artworkUrl);
+  const color = settings.accent === "white" ? "rgb(255 255 255)" : artworkColor;
   if (!state.track || (state.status !== "playing" && state.status !== "paused")) return null;
   return {
     id: "now-playing",
     live: state.status === "playing",
-    compact: <Compact np={np} notch={notch} color={color} />,
-    expanded: <Expanded np={np} notch={notch} color={color} />,
-    expandedSize: { width: EXPANDED_WIDTH, height: notch.height + EXPANDED_BODY },
+    compact: ({ side, height }) => <Compact np={np} side={side} height={height} color={color} />,
+    expanded: ({ topInset }) => <Expanded np={np} topInset={topInset} color={color} />,
+    expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY },
   };
 }

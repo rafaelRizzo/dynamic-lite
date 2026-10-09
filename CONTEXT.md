@@ -25,15 +25,39 @@ _Avoid_: Hover area, bounds
 ### Estados
 
 **Idle**:
-A Island do tamanho exato do Notch, sem conteúdo.
+A Island do tamanho exato do Notch, sem conteúdo; em telas sem Notch pode ficar escondida.
 
 **Compact**:
-A Island esticada para os lados do Notch, mostrando um resumo da Activity.
+A Island esticada para os lados do Notch, mostrando um resumo da Activity; sempre preta, qualquer que seja o Style.
 _Avoid_: Minimal, collapsed
 
 **Expanded**:
 A Island aberta para baixo com a Activity completa e seus controles.
 _Avoid_: Open, full, large
+
+### Aparência
+
+**Style**:
+A aparência do Expanded: Black, Translucent ou Glass.
+_Avoid_: Theme, skin, mode
+
+**Target Screen**:
+A tela onde a Island vive: Automática (a com Notch, senão a principal), Principal ou uma tela escolhida pelo nome.
+_Avoid_: Monitor, display
+
+### Ajustes
+
+**Settings**:
+As preferências do usuário, aplicadas na hora e persistidas entre execuções.
+_Avoid_: Config, preferences, options
+
+**Context Menu**:
+O menu nativo aberto pelo clique direito na Island, com acesso à Settings Window.
+_Avoid_: Right-click menu, popup
+
+**Settings Window**:
+A janela própria onde as Settings são editadas.
+_Avoid_: Preferences pane, config screen
 
 ### Conteúdo
 

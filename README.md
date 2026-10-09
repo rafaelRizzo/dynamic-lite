@@ -1,6 +1,26 @@
 # Dynamic Lite
 
+[![Release](https://img.shields.io/github/v/release/rafaelRizzo/dynamic-lite?style=flat-square&label=release&color=2EA44F&labelColor=2EA44F&logo=github&logoColor=white)](https://github.com/rafaelRizzo/dynamic-lite/releases/latest)
+![macOS 12+](https://img.shields.io/badge/macOS_12%2B-000000?style=flat-square&logo=apple&logoColor=white)
+![Liquid Glass](https://img.shields.io/badge/Liquid_Glass_macOS_26%2B-8E8E93?style=flat-square&logo=apple&logoColor=white)
+
+![Tauri 2](https://img.shields.io/badge/Tauri_2-24C8DB?style=flat-square&logo=tauri&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-CE422B?style=flat-square&logo=rust&logoColor=white)
+![React 19](https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript 7](https://img.shields.io/badge/TypeScript_7-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite 8](https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Bun](https://img.shields.io/badge/Bun-000000?style=flat-square&logo=bun&logoColor=white)
+![Spotify](https://img.shields.io/badge/Spotify-1DB954?style=flat-square&logo=spotify&logoColor=white)
+
 Dynamic Island para macOS: uma forma preta "líquida" que vive no notch e vira player do Spotify.
+
+**Compact**: tocando, capa à esquerda e equalizer à direita do notch.
+
+![Island compacta no notch, com capa à esquerda e equalizer à direita](docs/screenshots/compact.png)
+
+**Expanded**: mouse em cima, com progresso, controles e volume.
+
+![Island aberta com capa, faixa, progresso, controles e volume](docs/screenshots/expanded.png)
 
 | Estado | Quando | Mostra |
 |---|---|---|
@@ -9,8 +29,31 @@ Dynamic Island para macOS: uma forma preta "líquida" que vive no notch e vira p
 | Expanded | mouse sobre a Island | capa, faixa, progresso com seek, prev/play/next, volume |
 
 - Pausado: a Island volta ao tamanho do notch, mas abre no hover pra dar play.
-- Mac sem notch: simula um notch no topo central da tela principal.
-- Sem ícone no Dock. Ícone de pílula na menu bar com **Iniciar com o macOS** e **Sair**.
+- Mac sem notch: simula um notch no topo central da tela (ou some sem música, configurável).
+- Sem ícone no Dock. **Clique direito na Island** ou no ícone da menu bar: **Ajustes…** e **Sair**.
+
+## Ajustes
+
+Clique direito na Island → **Ajustes…** (ou ícone da menu bar). Tudo vale na hora, sem reiniciar.
+
+| Grupo | Ajuste | Opções |
+|---|---|---|
+| Aparência | Estilo do painel aberto | Preto, Translúcido (opacidade 60-100%), Vidro (Liquid Glass, macOS 26+) |
+| | Cor de destaque | Da capa, Branca |
+| Comportamento | Abrir com | Passar o mouse (com atraso ajustável), Clique |
+| | Toque no trackpad | Clique leve sentido no dedo ao abrir e fechar |
+| Tela | Mostrar em | Automática (tela com notch), Principal, ou uma tela pelo nome |
+| | Esconder sem música | Só em telas sem notch |
+| Sistema | Iniciar com o macOS | |
+| | Ícone na menu bar | Sem ele, o acesso é pelo clique direito |
+
+O estado compacto é sempre preto, pra fundir com o notch. No **Vidro**, o painel aberto vira Liquid Glass saindo do notch, com o mesmo formato e animação do Preto ([ADR 0004](docs/adr/0004-liquid-glass-nativo.md)); em macOS sem suporte, cai pro Translúcido.
+
+Ficam salvos em `~/Library/Application Support/com.rafael.dynamic-lite/settings.json`. Pra voltar ao padrão, apague esse arquivo e reabra o app.
+
+## Baixar
+
+Pegue o `.dmg` mais recente em [Releases](https://github.com/rafaelRizzo/dynamic-lite/releases/latest). É universal (Apple Silicon e Intel). Depois siga [Instalar](#instalar).
 
 ## Requisitos
 
@@ -84,6 +127,24 @@ Gera todos os tamanhos em `src-tauri/icons/`. Depois rode o build de novo.
 3. Aceite o pedido de **Automação → Spotify**.
 4. Opcional: menu bar → **Iniciar com o macOS**.
 
+## Releases automáticas
+
+| Evento | Workflow | O que faz |
+|---|---|---|
+| PR pra `main` | [ci.yml](.github/workflows/ci.yml) | Typecheck, build do frontend, `cargo check` e prévia da próxima versão no resumo do job |
+| Push/merge na `main` | [release.yml](.github/workflows/release.yml) | Calcula a versão, builda o `.dmg` universal, cria a tag `vX.Y.Z` e publica a release |
+
+A versão sai dos commits desde a última tag ([Conventional Commits](https://www.conventionalcommits.org/pt-br/)):
+
+| Commit | Exemplo | 0.1.0 vira |
+|---|---|---|
+| `feat` | `feat: Adicionado volume` | 0.2.0 |
+| `fix`, `perf`, `refactor`, `ui` | `fix: Corrigida linha do vidro` | 0.1.1 |
+| `!` ou `BREAKING CHANGE` no corpo | `feat!: Trocado formato das Settings` | 1.0.0 |
+| `docs`, `chore`, `ci`, `style`, `test`, `build` | `docs: README` | sem release |
+
+A tag é a fonte da verdade: a `main` não recebe commit de versão; o `tauri.conf.json` só é atualizado dentro do build. A lógica está em [next-version.sh](.github/scripts/next-version.sh) (dá pra rodar local pra ver a próxima versão). Também dá pra disparar manualmente em Actions → Release → Run workflow.
+
 ## Distribuir pra outras pessoas
 
 O build local não é assinado. Em outro Mac, o Gatekeeper bloqueia o app baixado. Opções:
@@ -128,13 +189,15 @@ Em dev, a permissão de Automação aparece no nome do terminal/VS Code, não do
 ```
 src-tauri/src/
   lib.rs        setup, comandos, hover + click-through
-  macos.rs      AppKit: geometria do notch, nível da janela, mouse, notificações
+  macos.rs      AppKit: telas/notch, janela, mouse, haptics, Liquid Glass, notificações
   layout.rs     tamanho da janela e Hit Region
   spotify.rs    leitura/controle via AppleScript + watcher
-  tray.rs       ícone e menu da menu bar
+  menu.rs       menu da menu bar, Context Menu, Settings Window
+  settings.rs   Settings: tipos, persistência, aplicação
 src/
   components/Island.tsx       forma líquida (molas), Ears, estados
   activities/                 Activities plugáveis (v1: now-playing)
+  settings/                   UI da Settings Window
 ```
 
 Vocabulário em [CONTEXT.md](CONTEXT.md), decisões de arquitetura em [docs/adr](docs/adr).

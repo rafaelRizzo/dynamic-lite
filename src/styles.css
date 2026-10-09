@@ -22,7 +22,15 @@ body,
 
 /* ---------- Island ---------- */
 
+/* registrada pra transição suave da opacidade no Style Translucent */
+@property --island-alpha {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
 .stage {
+  position: relative;
   display: flex;
   justify-content: center;
   height: 100%;
@@ -36,12 +44,25 @@ body,
 .island {
   position: absolute;
   inset: 0;
-  background: var(--island);
+  /* faixa do Notch sempre sólida, translucidez só abaixo dela */
+  background: linear-gradient(
+    to bottom,
+    var(--island) 0 var(--solid),
+    rgb(0 0 0 / var(--island-alpha)) calc(var(--solid) + 14px)
+  );
+  transition: --island-alpha 0.35s ease;
   overflow: hidden;
   isolation: isolate;
 }
 
 .island-content {
+  position: absolute;
+  top: 0;
+  transform-origin: 50% 0;
+}
+
+/* conteúdo do Expanded no Style Glass: o vidro é nativo, atrás do webview */
+.glass-content {
   position: absolute;
   top: 0;
   transform-origin: 50% 0;

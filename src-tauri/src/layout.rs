@@ -35,6 +35,9 @@ impl Layout {
     pub fn hit(&self, x: f64, y: f64) -> bool {
         let s = self.screen;
         let (w, h) = self.island;
+        if w <= 0.0 || h <= 0.0 {
+            return false;
+        }
         let cx = s.x + s.w / 2.0;
         let top = s.y + s.h;
         x >= cx - w / 2.0 - HIT_PADDING
