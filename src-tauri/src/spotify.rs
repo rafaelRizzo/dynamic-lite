@@ -180,7 +180,7 @@ fn repeat_one(spotify: &Spotify, id: &str, state: PlayerState, prev: Option<&(Pl
 }
 
 /// Lê o estado quando acordado (notificação do Spotify ou comando) ou num polling lento de segurança.
-pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>) {
+pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>, equalizer: Sender<bool>) {
     thread::spawn(move || {
         let mut prev: Option<(PlayerState, Instant)> = None;
         loop {
@@ -204,6 +204,7 @@ pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>) {
                 interval = interval.min(Duration::from_secs_f64(until_lead));
             }
 
+            let _ = equalizer.send(state.status == Status::Playing);
             {
                 let mut last = spotify.last.lock().unwrap();
                 if *last != state {

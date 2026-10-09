@@ -1,6 +1,7 @@
 #[cfg(not(target_os = "macos"))]
 compile_error!("Dynamic Lite só roda no macOS");
 
+mod equalizer;
 mod layout;
 mod macos;
 mod menu;
@@ -198,7 +199,8 @@ pub fn run() {
 
             menu::setup_tray(app.handle(), show_icon)?;
             spawn_hover_tracker(app.handle().clone(), layout.clone());
-            spotify::spawn_watcher(app.handle().clone(), spotify.clone(), wake_rx);
+            let eq = equalizer::spawn(app.handle().clone());
+            spotify::spawn_watcher(app.handle().clone(), spotify.clone(), wake_rx, eq);
             updater::spawn_checker(app.handle().clone());
             Ok(())
         })
