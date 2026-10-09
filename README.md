@@ -152,6 +152,8 @@ A versão sai dos commits desde a última tag ([Conventional Commits](https://ww
 
 A tag é a fonte da verdade: a `main` não recebe commit de versão. No CI a tag nova ainda não existe na hora do build, então a action passa a versão por `APP_VERSION` pro [tauri.sh](scripts/tauri.sh). A lógica está em [next-version.sh](.github/scripts/next-version.sh) (dá pra rodar local pra ver a próxima versão). Também dá pra disparar manualmente em Actions → Release → Run workflow.
 
+A tag é criada logo no início, antes do build; se o build falhar ou for cancelado (um push novo cancela a release anterior em andamento), ela é apagada. No CI o build usa LTO "thin" e cache do Rust (salvo mesmo em falha) pra ficar mais rápido; o `Cargo.toml` local continua com LTO completo.
+
 ## Distribuir pra outras pessoas
 
 O build local não é assinado. Em outro Mac, o Gatekeeper bloqueia o app baixado. Opções:

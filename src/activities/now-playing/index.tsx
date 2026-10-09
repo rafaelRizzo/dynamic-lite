@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useArtworkColor } from "../../hooks/useArtworkColor";
-import type { Settings } from "../../lib/native";
+import { native, type Settings } from "../../lib/native";
 import type { Activity } from "../types";
 import { Equalizer } from "./Equalizer";
-import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "./Icons";
+import { NextIcon, PauseIcon, PlayIcon, PrevIcon, SpotifyIcon } from "./Icons";
 import { Progress } from "./Progress";
 import { VolumeIcon, VolumePanel } from "./Volume";
 import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
@@ -44,13 +44,22 @@ function Compact({ np, side, height, color }: { np: NowPlayingControls; side: nu
   );
 }
 
-type ButtonProps = { onClick: () => void; children: React.ReactNode; primary?: boolean; active?: boolean; label?: string };
+type ButtonProps = {
+  onClick: () => void;
+  children: React.ReactNode;
+  primary?: boolean;
+  active?: boolean;
+  label?: string;
+  variant?: "spotify";
+};
 
-function Button({ onClick, children, primary, active, label }: ButtonProps) {
+function Button({ onClick, children, primary, active, label, variant }: ButtonProps) {
   return (
     <motion.button
       className="np-btn"
       data-primary={primary}
+      data-variant={variant}
+      title={label}
       data-active={active}
       aria-label={label}
       onClick={onClick}
@@ -89,7 +98,9 @@ function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedPr
       </div>
       <Progress playback={np.playback} color={color} onSeek={np.seek} />
       <div className="np-controls">
-        <span />
+        <Button onClick={() => native.spotifyOpen(track.id)} label="Abrir no Spotify" variant="spotify">
+          <SpotifyIcon />
+        </Button>
         <Button onClick={np.previous} label="Anterior"><PrevIcon /></Button>
         <Button onClick={np.toggle} primary>
           <AnimatePresence initial={false} mode="popLayout">

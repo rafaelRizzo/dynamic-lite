@@ -5,9 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# push novo cancela a release anterior ainda em andamento (a tag dela é apagada no passo "Remover tag")
 concurrency:
   group: release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -49,6 +50,10 @@ jobs:
     needs: version
     if: needs.version.outputs.release == 'true'
     runs-on: macos-latest
+    env:
+      # LTO "thin" só no CI: build bem mais rápido, app um pouco maior que o "fat" do Cargo.toml
+      CARGO_PROFILE_RELEASE_LTO: thin
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
     steps:
       - uses: actions/checkout@v5
 
@@ -61,6 +66,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          cache-on-failure: true
 
       - name: Instalar dependências
         run: bun install --frozen-lockfile
@@ -79,7 +85,7 @@ jobs:
           releaseDraft: false
           prerelease: false
 
-      # build falhou: apaga a tag pra próxima versão não pular esta
+      # build falhou ou foi cancelado: apaga a tag pra próxima versão não pular esta
       - name: Remover tag
-        if: failure()
+        if: failure() || cancelled()
         run: git push origin --delete "v${{ needs.version.outputs.version }}" || true

@@ -193,3 +193,20 @@ pub async fn spotify_volume(volume: u8, spotify: State<'_, Arc<Spotify>>) -> Res
     spotify.wake();
     Ok(())
 }
+
+/// Traz o Spotify pra frente mostrando a faixa. Abrir a URI não interrompe nem reinicia a reprodução.
+#[tauri::command]
+pub async fn spotify_open(uri: String) -> Result<(), String> {
+    // só URIs de faixa: o comando não pode virar um "open" genérico
+    let valid = uri
+        .strip_prefix("spotify:track:")
+        .is_some_and(|id| !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric()));
+    if !valid {
+        return Err(format!("URI inválida: {uri}"));
+    }
+    tauri::async_runtime::spawn_blocking(move || Command::new("open").arg(&uri).status())
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())
+        .and_then(|status| if status.success() { Ok(()) } else { Err(format!("open saiu com {status}")) })
+}

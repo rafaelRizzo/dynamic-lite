@@ -70,6 +70,8 @@ export const native = {
   spotifyControl: (action: SpotifyAction) => invoke<void>("spotify_control", { action }),
   spotifySeek: (position: number) => invoke<void>("spotify_seek", { position }),
   spotifyVolume: (volume: number) => invoke<void>("spotify_volume", { volume }),
+  /** Traz o Spotify pra frente na faixa (`spotify:track:...`), sem mexer na reprodução. */
+  spotifyOpen: (uri: string) => invoke<void>("spotify_open", { uri }),
   onNotch: on<Notch>("island://notch"),
   onHover: on<boolean>("island://hover"),
   onSpotify: on<PlayerState>("spotify://state"),

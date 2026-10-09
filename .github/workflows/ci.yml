@@ -22,6 +22,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          cache-on-failure: true
 
       - name: Instalar dependências
         run: bun install --frozen-lockfile

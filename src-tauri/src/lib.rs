@@ -148,6 +148,7 @@ pub fn run() {
             spotify::spotify_control,
             spotify::spotify_seek,
             spotify::spotify_volume,
+            spotify::spotify_open,
         ])
         .setup(move |app| {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);

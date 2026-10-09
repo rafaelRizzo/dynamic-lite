@@ -221,12 +221,15 @@ body,
   height: 8px;
 }
 
-/* prev/play/next centralizados; volume na ponta direita */
+/* Spotify na ponta esquerda, prev/play/next centralizados, volume na ponta direita */
 .np-controls {
   display: grid;
   grid-template-columns: 1fr auto auto auto 1fr;
   align-items: center;
   gap: 28px;
+}
+.np-controls > :first-child {
+  justify-self: start;
 }
 .np-controls > :last-child {
   justify-self: end;
@@ -243,6 +246,13 @@ body,
 }
 .np-btn:hover {
   background: rgb(255 255 255 / 0.1);
+}
+.np-btn[data-variant="spotify"] {
+  color: var(--text-dim);
+  transition: color 0.15s, background 0.15s;
+}
+.np-btn[data-variant="spotify"]:hover {
+  color: #1db954;
 }
 .np-btn[data-active="true"] {
   background: rgb(255 255 255 / 0.16);
