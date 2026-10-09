@@ -204,3 +204,22 @@
   font-size: 12px;
   max-width: 220px;
 }
+
+.st-button {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 0.5px solid var(--line);
+  background: var(--control);
+  color: var(--text);
+  white-space: nowrap;
+}
+.st-button:disabled {
+  opacity: 0.5;
+}
+.st-button-primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}

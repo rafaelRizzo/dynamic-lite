@@ -24,3 +24,10 @@ dist-ssr
 
 # TypeScript incremental
 *.tsbuildinfo
+
+# Chaves e segredos (as do updater ficam em ~/.tauri, fora do repo)
+*.key
+*.key.password
+*.pem
+.env
+.env.*

@@ -5,6 +5,8 @@ use tauri::menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager, Runtime, WebviewUrl, WebviewWindowBuilder, Window};
 
+use crate::updater::Updates;
+
 const TRAY_ID: &str = "tray";
 const SETTINGS_LABEL: &str = "settings";
 const ICON_W: u32 = 36;
@@ -34,9 +36,23 @@ fn pill_icon() -> Image<'static> {
 }
 
 fn build_menu<R: Runtime, M: Manager<R>>(manager: &M) -> tauri::Result<Menu<R>> {
-    let settings = MenuItem::with_id(manager, "settings", "Ajustes…", true, Some("Cmd+,"))?;
-    let quit = MenuItem::with_id(manager, "quit", "Sair do Dynamic Lite", true, Some("Cmd+Q"))?;
-    Menu::with_items(manager, &[&settings, &PredefinedMenuItem::separator(manager)?, &quit])
+    let menu = Menu::new(manager)?;
+    if let Some(update) = manager.state::<Updates>().info() {
+        let label = format!("Instalar atualização v{} e reabrir", update.version);
+        menu.append(&MenuItem::with_id(manager, "install-update", label, true, None::<&str>)?)?;
+        menu.append(&PredefinedMenuItem::separator(manager)?)?;
+    }
+    menu.append(&MenuItem::with_id(manager, "settings", "Ajustes…", true, Some("Cmd+,"))?)?;
+    menu.append(&PredefinedMenuItem::separator(manager)?)?;
+    menu.append(&MenuItem::with_id(manager, "quit", "Sair do Dynamic Lite", true, Some("Cmd+Q"))?)?;
+    Ok(menu)
+}
+
+/// Remonta o menu da menu bar (ex.: apareceu uma atualização).
+pub fn refresh_tray(app: &AppHandle) {
+    if let (Some(tray), Ok(menu)) = (app.tray_by_id(TRAY_ID), build_menu(app)) {
+        let _ = tray.set_menu(Some(menu));
+    }
 }
 
 pub fn setup_tray(app: &AppHandle, visible: bool) -> tauri::Result<()> {
@@ -61,6 +77,12 @@ pub fn set_tray_visible(app: &AppHandle, visible: bool) {
 pub fn handle_event(app: &AppHandle, event: MenuEvent) {
     match event.id.as_ref() {
         "settings" => open_settings(app),
+        "install-update" => {
+            let app = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let _ = crate::updater::install(app).await;
+            });
+        }
         "quit" => app.exit(0),
         _ => {}
     }

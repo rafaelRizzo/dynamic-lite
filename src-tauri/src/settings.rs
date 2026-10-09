@@ -52,6 +52,7 @@ pub struct Settings {
     pub display: String,
     pub all_spaces: bool,
     pub hide_in_mission_control: bool,
+    pub auto_update: bool,
 }
 
 impl Default for Settings {
@@ -68,6 +69,7 @@ impl Default for Settings {
             display: "auto".into(),
             all_spaces: true,
             hide_in_mission_control: true,
+            auto_update: true,
         }
     }
 }

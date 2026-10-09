@@ -13,8 +13,11 @@
 ![Vite 8](https://img.shields.io/badge/Vite_8-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Bun](https://img.shields.io/badge/Bun-000000?style=flat-square&logo=bun&logoColor=white)
 ![Spotify](https://img.shields.io/badge/Spotify-1DB954?style=flat-square&logo=spotify&logoColor=white)
+[![Licença MIT](https://img.shields.io/badge/Licen%C3%A7a-MIT-F7DF1E?style=flat-square&logoColor=black)](LICENSE)
 
 Dynamic Island para macOS: uma forma preta "líquida" que vive no notch e vira player do Spotify.
+
+> Inspirado no **Alcove**. Este é um projeto independente e open source, feito como uma alternativa livre. Não tem relação com o Alcove nem com seus criadores e não tem nenhuma intenção de prejudicá-los.
 
 **Compact**: tocando, capa à esquerda e equalizer à direita do notch.
 
@@ -33,6 +36,7 @@ Dynamic Island para macOS: uma forma preta "líquida" que vive no notch e vira p
 - Pausado: a Island volta ao tamanho do notch, mas abre no hover pra dar play.
 - Mac sem notch: simula um notch no topo central da tela (ou some sem música, configurável).
 - Sem ícone no Dock. **Clique direito na Island** ou no ícone da menu bar: **Ajustes…** e **Sair**.
+- Uma instância só: abrir o app de novo traz os Ajustes da que já está rodando.
 
 ## Ajustes
 
@@ -48,6 +52,7 @@ Clique direito na Island → **Ajustes…** (ou ícone da menu bar). Tudo vale n
 | | Mesas | Todas, ou só a atual (fica presa na mesa ativa ao escolher) |
 | | Esconder no Mission Control | Não cobre a barra de mesas no topo |
 | | Esconder sem música | Só em telas sem notch |
+| Atualizações | Verificar automaticamente | Ao abrir e uma vez por dia; botão "Verificar agora" |
 | Sistema | Iniciar com o macOS | |
 | | Ícone na menu bar | Sem ele, o acesso é pelo clique direito |
 
@@ -112,7 +117,10 @@ Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`.
 
 A versão do app vem da última tag `vX.Y.Z` do git: `bun run tauri dev/build` passa por [scripts/tauri.sh](scripts/tauri.sh), que lê a tag e injeta no build sem editar arquivos. Sem tag, vale a do `tauri.conf.json`. Pra forçar uma versão: `APP_VERSION=1.2.3 bun run tauri build`.
 
-O `v0.1.0` que o Cargo mostra ao compilar é a versão do pacote Rust (`Cargo.toml`), não a do app; ela não muda.
+Ao compilar aparecem duas linhas de versão:
+
+- `Dynamic Lite vX.Y.Z`: impressa pelo [scripts/tauri.sh](scripts/tauri.sh), segue a última tag do git. É a versão do app.
+- `Compiling dynamic-lite v0.1.0`: do Cargo, é a versão do pacote Rust no `Cargo.toml`. Não muda com a tag e não aparece pro usuário.
 
 ### Ícone
 
@@ -155,6 +163,37 @@ A versão sai dos commits desde a última tag ([Conventional Commits](https://ww
 A tag é a fonte da verdade: a `main` não recebe commit de versão. No CI a tag nova ainda não existe na hora do build, então a action passa a versão por `APP_VERSION` pro [tauri.sh](scripts/tauri.sh). A lógica está em [next-version.sh](.github/scripts/next-version.sh) (dá pra rodar local pra ver a próxima versão). Também dá pra disparar manualmente em Actions → Release → Run workflow.
 
 A tag é criada logo no início, antes do build; se o build falhar ou for cancelado (um push novo cancela a release anterior em andamento), ela é apagada. No CI o build usa LTO "thin" e cache do Rust (salvo mesmo em falha) pra ficar mais rápido; o `Cargo.toml` local continua com LTO completo.
+
+## Atualizações automáticas
+
+O app verifica atualização ao abrir (10s depois) e a cada 24h, lendo o `latest.json` da última Release do GitHub (plugin oficial `tauri-plugin-updater`). Dá pra desligar em Ajustes → Atualizações → **Verificar automaticamente**; tem também o botão **Verificar agora**.
+
+Quando há versão nova:
+
+- Aparece uma Activity na Island, só quando não tem música tocando (o Now Playing tem prioridade), com **Depois** e **Instalar e reabrir**.
+- O item **Instalar atualização vX e reabrir** aparece no clique direito, no menu da menu bar e nos Ajustes.
+- **Depois** esconde o aviso até a próxima checagem.
+
+O pacote de update (`.app.tar.gz`) é assinado com uma chave própria do updater (minisign), diferente da assinatura da Apple:
+
+| Chave | Onde |
+|---|---|
+| Pública | `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) |
+| Privada | `~/.tauri/dynamic-lite.key` (senha em `~/.tauri/dynamic-lite.key.password`) e secrets `TAURI_SIGNING_PRIVATE_KEY` e `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` no environment `release` do GitHub (liberado só pra `main`) |
+
+> [!WARNING]
+> Guarde a chave privada num gerenciador de senhas. Se perder, quem tem o app instalado não recebe mais update automático e precisa baixar o `.dmg` de novo.
+
+Build local: o [scripts/tauri.sh](scripts/tauri.sh) usa a chave de `~/.tauri` se existir. Se não existir (ex.: quem clonou o repo), builda sem os artefatos de update.
+
+Só funciona a partir da primeira versão publicada com o updater; versões anteriores precisam baixar o `.dmg` uma vez.
+
+### Segurança do CI
+
+- Actions fixadas por SHA do commit (tag no comentário); o [Dependabot](.github/dependabot.yml) abre PR `ci:` quando sai versão nova.
+- Permissões mínimas: `ci.yml` só lê; no `release.yml` só os jobs de tag e release escrevem.
+- Chave de assinatura só no environment `release`, que só roda na `main`.
+- A `main` bloqueia force-push e exclusão (ruleset "Proteger main"); push direto continua liberado.
 
 ## Distribuir pra outras pessoas
 
@@ -205,10 +244,15 @@ src-tauri/src/
   spotify.rs    leitura/controle via AppleScript + watcher
   menu.rs       menu da menu bar, Context Menu, Settings Window
   settings.rs   Settings: tipos, persistência, aplicação
+  updater.rs    checagem diária e instalação de atualizações
 src/
   components/Island.tsx       forma líquida (molas), Ears, estados
-  activities/                 Activities plugáveis (v1: now-playing)
+  activities/                 Activities plugáveis (now-playing, update)
   settings/                   UI da Settings Window
 ```
 
 Vocabulário em [CONTEXT.md](CONTEXT.md), decisões de arquitetura em [docs/adr](docs/adr).
+
+## Licença
+
+[MIT](LICENSE). Pode usar, modificar e distribuir, inclusive comercialmente, mantendo o aviso de copyright.

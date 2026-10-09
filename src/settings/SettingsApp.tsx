@@ -1,6 +1,7 @@
 import { getVersion } from "@tauri-apps/api/app";
 import { useEffect, useState } from "react";
 import { usePlatform, useSettings } from "../hooks/useSettings";
+import { useUpdate } from "../hooks/useUpdate";
 import { native } from "../lib/native";
 import { Note, Range, Row, Section, Segmented, Toggle } from "./controls";
 import icon from "../assets/icon.png";
@@ -16,6 +17,57 @@ function useDisplays() {
     return () => window.removeEventListener("focus", load);
   }, []);
   return displays;
+}
+
+function UpdatesSection({ autoUpdate, onAutoUpdate }: { autoUpdate: boolean; onAutoUpdate: (v: boolean) => void }) {
+  const { info, setInfo, installing, error, install } = useUpdate();
+  const [checking, setChecking] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
+
+  const check = () => {
+    setChecking(true);
+    setCheckError(null);
+    native
+      .checkUpdate()
+      .then((found) => {
+        setInfo(found);
+        setChecked(true);
+      })
+      .catch((e) => setCheckError(String(e)))
+      .finally(() => setChecking(false));
+  };
+
+  const status = error
+    ? `Falhou: ${error}`
+    : checkError
+      ? `Não deu pra verificar: ${checkError}`
+      : installing
+        ? "Instalando, o app vai reabrir…"
+        : info
+          ? `Versão ${info.version} disponível (você tem ${info.currentVersion})`
+          : checked
+            ? "Você está na versão mais recente"
+            : undefined;
+
+  return (
+    <Section title="Atualizações">
+      <Row label="Verificar automaticamente" hint="Ao abrir o app e uma vez por dia">
+        <Toggle checked={autoUpdate} onChange={onAutoUpdate} />
+      </Row>
+      <Row label={info ? "Atualização disponível" : "Procurar atualização"} hint={status}>
+        {info ? (
+          <button className="st-button st-button-primary" onClick={install} disabled={installing}>
+            {installing ? "Instalando…" : "Instalar e reabrir"}
+          </button>
+        ) : (
+          <button className="st-button" onClick={check} disabled={checking}>
+            {checking ? "Verificando…" : "Verificar agora"}
+          </button>
+        )}
+      </Row>
+    </Section>
+  );
 }
 
 export function SettingsApp() {
@@ -150,6 +202,8 @@ export function SettingsApp() {
           />
         </Row>
       </Section>
+
+      <UpdatesSection autoUpdate={settings.autoUpdate} onAutoUpdate={(autoUpdate) => update({ autoUpdate })} />
 
       <Section title="Sistema">
         <Row label="Iniciar com o macOS">

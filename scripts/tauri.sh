@@ -2,18 +2,37 @@
 # Tauri CLI com a versão do app vinda da última tag git (vX.Y.Z), sem editar arquivos.
 # APP_VERSION no ambiente tem prioridade: o CI usa pra lançar a versão nova antes da tag existir.
 # Sem tag e sem APP_VERSION, vale a versão do tauri.conf.json.
+#
+# Os artefatos de atualização automática precisam da chave privada: no build local usa
+# ~/.tauri/dynamic-lite.key (+ .password) se existir; senão desliga esses artefatos.
 set -euo pipefail
 
+KEY="$HOME/.tauri/dynamic-lite.key"
 version="${APP_VERSION:-$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed 's/^v//' || true)}"
 
 case "${1:-}" in
   dev | build)
+    cmd="$1"
+    shift
+    overrides=()
     if [[ -n "$version" ]]; then
-      cmd="$1"
-      shift
       echo "Dynamic Lite v$version" >&2
-      exec tauri "$cmd" --config "{\"version\":\"$version\"}" "$@"
+      overrides+=("\"version\":\"$version\"")
     fi
+    if [[ "$cmd" == build && -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
+      if [[ -f "$KEY" ]]; then
+        export TAURI_SIGNING_PRIVATE_KEY="$KEY"
+        TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$(cat "$KEY.password" 2>/dev/null || true)"
+        export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+      else
+        echo "Sem $KEY: build sem artefatos de atualização automática" >&2
+        overrides+=('"bundle":{"createUpdaterArtifacts":false}')
+      fi
+    fi
+    if ((${#overrides[@]})); then
+      exec tauri "$cmd" --config "{$(IFS=,; echo "${overrides[*]}")}" "$@"
+    fi
+    exec tauri "$cmd" "$@"
     ;;
 esac
 exec tauri "$@"

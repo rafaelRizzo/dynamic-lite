@@ -45,7 +45,10 @@ export type Settings = {
   display: string;
   allSpaces: boolean;
   hideInMissionControl: boolean;
+  autoUpdate: boolean;
 };
+
+export type UpdateInfo = { version: string; currentVersion: string; notes: string | null };
 
 export type Platform = { glassSupported: boolean };
 
@@ -69,6 +72,10 @@ export const native = {
   setGlass: (target: IslandShape | null, rest: IslandShape) => invoke<void>("set_glass", { target, rest }),
   haptic: () => invoke<void>("haptic"),
   showContextMenu: () => invoke<void>("show_context_menu"),
+  getUpdate: () => invoke<UpdateInfo | null>("get_update"),
+  checkUpdate: () => invoke<UpdateInfo | null>("check_update"),
+  /** baixa, instala e reabre o app (não retorna em caso de sucesso) */
+  installUpdate: () => invoke<void>("install_update"),
   getSettings: () => invoke<Settings>("get_settings"),
   setSettings: (value: Settings) => invoke<void>("set_settings", { value }),
   getAutostart: () => invoke<boolean>("get_autostart"),
@@ -85,6 +92,8 @@ export const native = {
   onHover: on<boolean>("island://hover"),
   onSpotify: on<PlayerState>("spotify://state"),
   onSettings: on<Settings>("settings://changed"),
+  onUpdate: on<UpdateInfo | null>("update://available"),
+  onUpdateInstalling: on<null>("update://installing"),
 };
 
 /** Assina um evento no useEffect sem vazar listener se o componente desmontar antes do `listen` resolver. */

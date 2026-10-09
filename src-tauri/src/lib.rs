@@ -6,6 +6,7 @@ mod macos;
 mod menu;
 mod settings;
 mod spotify;
+mod updater;
 
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
@@ -141,7 +142,14 @@ pub fn run() {
     let spotify = Spotify::new(wake_tx);
 
     tauri::Builder::default()
+        // precisa ser o primeiro plugin: uma segunda instância fecha e a primeira abre os Ajustes
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            let handle = app.clone();
+            let _ = app.run_on_main_thread(move || menu::open_settings(&handle));
+        }))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(updater::Updates::default())
         .manage(layout.clone())
         .manage(spotify.clone())
         .on_menu_event(menu::handle_event)
@@ -164,6 +172,9 @@ pub fn run() {
             spotify::spotify_open,
             spotify::spotify_shuffle,
             spotify::spotify_repeat,
+            updater::get_update,
+            updater::check_update,
+            updater::install_update,
         ])
         .setup(move |app| {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -188,6 +199,7 @@ pub fn run() {
             menu::setup_tray(app.handle(), show_icon)?;
             spawn_hover_tracker(app.handle().clone(), layout.clone());
             spotify::spawn_watcher(app.handle().clone(), spotify.clone(), wake_rx);
+            updater::spawn_checker(app.handle().clone());
             Ok(())
         })
         .run(tauri::generate_context!())
