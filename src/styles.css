@@ -153,21 +153,40 @@ body,
   text-align: right;
 }
 
-.np-volume {
-  padding-inline: 4px;
-  color: var(--text-dim);
+/* painel que desce ao clicar no botão de volume */
+.np-volume-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px 0 5px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.07);
 }
 
-.np-vol-btn {
+.np-mute {
   all: unset;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-}
-.np-vol-btn:hover {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   color: var(--text);
+  transition: background 0.15s, color 0.15s;
+}
+.np-mute:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+.np-mute[data-muted="true"] {
+  color: rgb(255 105 97);
+}
+
+.np-volume-value {
+  min-width: 34px;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
 }
 
 /* ---------- Slider ---------- */
@@ -202,11 +221,15 @@ body,
   height: 8px;
 }
 
+/* prev/play/next centralizados; volume na ponta direita */
 .np-controls {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr auto auto auto 1fr;
   align-items: center;
   gap: 28px;
+}
+.np-controls > :last-child {
+  justify-self: end;
 }
 
 .np-btn {
@@ -220,6 +243,9 @@ body,
 }
 .np-btn:hover {
   background: rgb(255 255 255 / 0.1);
+}
+.np-btn[data-active="true"] {
+  background: rgb(255 255 255 / 0.16);
 }
 .np-btn[data-primary="true"] {
   width: 44px;

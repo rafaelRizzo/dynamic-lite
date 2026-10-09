@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { native, subscribe, type PlayerState } from "../../lib/native";
 
 export type Playback = { state: PlayerState; receivedAt: number };
+
+/** Volume restaurado ao desmutar quando não há um anterior conhecido. */
+const DEFAULT_VOLUME = 50;
 
 const EMPTY: Playback = { state: { status: "closed", track: null, position: 0, volume: 0 }, receivedAt: 0 };
 
@@ -13,6 +16,10 @@ export function positionAt({ state, receivedAt }: Playback, now: number): number
 
 export function useNowPlaying() {
   const [playback, setPlayback] = useState<Playback>(EMPTY);
+  const volumeRef = useRef(0);
+  volumeRef.current = playback.state.volume;
+  // o Spotify não tem mute: mutar é volume 0, lembrando o anterior pra voltar
+  const beforeMute = useRef(DEFAULT_VOLUME);
 
   useEffect(() => {
     const receive = (state: PlayerState) => setPlayback({ state, receivedAt: Date.now() });
@@ -37,14 +44,19 @@ export function useNowPlaying() {
 
   const setVolume = useCallback((volume: number) => {
     const v = Math.round(Math.min(100, Math.max(0, volume)));
+    if (v > 0) beforeMute.current = v;
     setPlayback((p) => ({ ...p, state: { ...p.state, volume: v } }));
     native.spotifyVolume(v);
   }, []);
 
+  const toggleMute = useCallback(() => {
+    setVolume(volumeRef.current > 0 ? 0 : beforeMute.current);
+  }, [setVolume]);
+
   const next = useCallback(() => native.spotifyControl("next"), []);
   const previous = useCallback(() => native.spotifyControl("previous"), []);
 
-  return { playback, toggle, seek, setVolume, next, previous };
+  return { playback, toggle, seek, setVolume, toggleMute, next, previous };
 }
 
 export type NowPlayingControls = ReturnType<typeof useNowPlaying>;

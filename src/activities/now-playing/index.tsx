@@ -1,16 +1,19 @@
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useState } from "react";
 import { useArtworkColor } from "../../hooks/useArtworkColor";
 import type { Settings } from "../../lib/native";
 import type { Activity } from "../types";
 import { Equalizer } from "./Equalizer";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon } from "./Icons";
 import { Progress } from "./Progress";
-import { Volume } from "./Volume";
+import { VolumeIcon, VolumePanel } from "./Volume";
 import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
 
 const EXPANDED_WIDTH = 400;
-/** cabeçalho + progresso + controles + volume + respiro inferior */
-const EXPANDED_BODY = 184;
+/** cabeçalho + progresso + controles + respiro inferior */
+const EXPANDED_BODY = 150;
+/** espaço extra quando o painel de volume está aberto */
+const VOLUME_PANEL = 50;
 
 function Artwork({ url, size, radius }: { url: string; size: number; radius: number }) {
   return (
@@ -41,11 +44,15 @@ function Compact({ np, side, height, color }: { np: NowPlayingControls; side: nu
   );
 }
 
-function Button({ onClick, children, primary }: { onClick: () => void; children: React.ReactNode; primary?: boolean }) {
+type ButtonProps = { onClick: () => void; children: React.ReactNode; primary?: boolean; active?: boolean; label?: string };
+
+function Button({ onClick, children, primary, active, label }: ButtonProps) {
   return (
     <motion.button
       className="np-btn"
       data-primary={primary}
+      data-active={active}
+      aria-label={label}
       onClick={onClick}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.82 }}
@@ -56,10 +63,20 @@ function Button({ onClick, children, primary }: { onClick: () => void; children:
   );
 }
 
-function Expanded({ np, topInset, color }: { np: NowPlayingControls; topInset: number; color: string }) {
+type ExpandedProps = {
+  np: NowPlayingControls;
+  topInset: number;
+  color: string;
+  volumeOpen: boolean;
+  setVolumeOpen: (open: boolean) => void;
+};
+
+function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedProps) {
   const { state } = np.playback;
   const track = state.track!;
   const playing = state.status === "playing";
+  // a Island fechou: na próxima abertura o painel de volume começa recolhido
+  useEffect(() => () => setVolumeOpen(false), [setVolumeOpen]);
   return (
     <div className="np-expanded" style={{ paddingTop: topInset }}>
       <div className="np-head">
@@ -72,7 +89,8 @@ function Expanded({ np, topInset, color }: { np: NowPlayingControls; topInset: n
       </div>
       <Progress playback={np.playback} color={color} onSeek={np.seek} />
       <div className="np-controls">
-        <Button onClick={np.previous}><PrevIcon /></Button>
+        <span />
+        <Button onClick={np.previous} label="Anterior"><PrevIcon /></Button>
         <Button onClick={np.toggle} primary>
           <AnimatePresence initial={false} mode="popLayout">
             <motion.span
@@ -87,9 +105,22 @@ function Expanded({ np, topInset, color }: { np: NowPlayingControls; topInset: n
             </motion.span>
           </AnimatePresence>
         </Button>
-        <Button onClick={np.next}><NextIcon /></Button>
+        <Button onClick={np.next} label="Próxima"><NextIcon /></Button>
+        <Button onClick={() => setVolumeOpen(!volumeOpen)} active={volumeOpen} label="Volume">
+          <VolumeIcon volume={state.volume} size={18} />
+        </Button>
       </div>
-      <Volume volume={state.volume} onChange={np.setVolume} />
+      <AnimatePresence initial={false}>
+        {volumeOpen && (
+          <VolumePanel
+            key="volume"
+            volume={state.volume}
+            color={color}
+            onChange={np.setVolume}
+            onToggleMute={np.toggleMute}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -97,6 +128,7 @@ function Expanded({ np, topInset, color }: { np: NowPlayingControls; topInset: n
 /** Now Playing do Spotify como Activity: live tocando, disponível no hover quando pausado. */
 export function useNowPlayingActivity(settings: Settings): Activity | null {
   const np = useNowPlaying();
+  const [volumeOpen, setVolumeOpen] = useState(false);
   const { state } = np.playback;
   const artworkColor = useArtworkColor(state.track?.artworkUrl);
   const color = settings.accent === "white" ? "rgb(255 255 255)" : artworkColor;
@@ -105,7 +137,10 @@ export function useNowPlayingActivity(settings: Settings): Activity | null {
     id: "now-playing",
     live: state.status === "playing",
     compact: ({ side, height }) => <Compact np={np} side={side} height={height} color={color} />,
-    expanded: ({ topInset }) => <Expanded np={np} topInset={topInset} color={color} />,
-    expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY },
+    expanded: ({ topInset }) => (
+      <Expanded np={np} topInset={topInset} color={color} volumeOpen={volumeOpen} setVolumeOpen={setVolumeOpen} />
+    ),
+    // a Island "escorre" pra baixo quando o painel de volume abre
+    expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY + (volumeOpen ? VOLUME_PANEL : 0) },
   };
 }
