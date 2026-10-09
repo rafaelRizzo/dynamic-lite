@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Tauri CLI com a versão do app vinda da última tag git (vX.Y.Z), sem editar arquivos.
+# Tauri CLI com a versão do app vinda da maior tag git (vX.Y.Z), sem editar arquivos.
+# Maior tag do repo, não a mais próxima do HEAD: as tags ficam nos merges da main, que a dev não contém.
 # APP_VERSION no ambiente tem prioridade: o CI usa pra lançar a versão nova antes da tag existir.
 # Sem tag e sem APP_VERSION, vale a versão do tauri.conf.json.
 #
@@ -8,7 +9,7 @@
 set -euo pipefail
 
 KEY="$HOME/.tauri/dynamic-lite.key"
-version="${APP_VERSION:-$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed 's/^v//' || true)}"
+version="${APP_VERSION:-$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname 2>/dev/null | head -n1 | sed 's/^v//' || true)}"
 
 case "${1:-}" in
   dev | build)

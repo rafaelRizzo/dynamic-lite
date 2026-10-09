@@ -115,11 +115,11 @@ Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`.
 
 ### Versão
 
-A versão do app vem da última tag `vX.Y.Z` do git: `bun run tauri dev/build` passa por [scripts/tauri.sh](scripts/tauri.sh), que lê a tag e injeta no build sem editar arquivos. Sem tag, vale a do `tauri.conf.json`. Pra forçar uma versão: `APP_VERSION=1.2.3 bun run tauri build`.
+A versão do app vem da maior tag `vX.Y.Z` do git (rode `git fetch --tags` antes pra ter as do GitHub): `bun run tauri dev/build` passa por [scripts/tauri.sh](scripts/tauri.sh), que lê a tag e injeta no build sem editar arquivos. Sem tag, vale a do `tauri.conf.json`. Pra forçar uma versão: `APP_VERSION=1.2.3 bun run tauri build`.
 
 Ao compilar aparecem duas linhas de versão:
 
-- `Dynamic Lite vX.Y.Z`: impressa pelo [scripts/tauri.sh](scripts/tauri.sh), segue a última tag do git. É a versão do app.
+- `Dynamic Lite vX.Y.Z`: impressa pelo [scripts/tauri.sh](scripts/tauri.sh), segue a maior tag do git. É a versão do app.
 - `Compiling dynamic-lite v0.1.0`: do Cargo, é a versão do pacote Rust no `Cargo.toml`. Não muda com a tag e não aparece pro usuário.
 
 ### Ícone
