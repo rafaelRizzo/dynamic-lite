@@ -19,8 +19,14 @@ function useDisplays() {
   return displays;
 }
 
-function UpdatesSection({ autoUpdate, onAutoUpdate }: { autoUpdate: boolean; onAutoUpdate: (v: boolean) => void }) {
-  const { info, setInfo, installing, error, install } = useUpdate();
+type UpdatesSectionProps = {
+  update: ReturnType<typeof useUpdate>;
+  autoUpdate: boolean;
+  onAutoUpdate: (v: boolean) => void;
+};
+
+function UpdatesSection({ update, autoUpdate, onAutoUpdate }: UpdatesSectionProps) {
+  const { info, setInfo, installing, error, install } = update;
   const [checking, setChecking] = useState(false);
   const [checked, setChecked] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
@@ -76,11 +82,18 @@ export function SettingsApp() {
   const displays = useDisplays();
   const [autostart, setAutostart] = useState<boolean | null>(null);
   const [version, setVersion] = useState("");
+  const appUpdate = useUpdate();
+  const autoUpdate = settings?.autoUpdate;
 
   useEffect(() => {
     native.getAutostart().then(setAutostart);
     getVersion().then(setVersion);
   }, []);
+
+  // abrir os Ajustes já checa, sem esperar a checagem diária
+  useEffect(() => {
+    if (autoUpdate) native.checkUpdate().catch(() => {});
+  }, [autoUpdate]);
 
   if (!settings || !platform) return null;
 
@@ -95,6 +108,16 @@ export function SettingsApp() {
           <h1>Dynamic Lite</h1>
           <small>Versão {version}</small>
         </div>
+        {appUpdate.info && (
+          <button
+            className="st-button st-button-primary st-header-update"
+            onClick={appUpdate.install}
+            disabled={appUpdate.installing}
+            title={`Instala a versão ${appUpdate.info.version} e reabre o app`}
+          >
+            {appUpdate.installing ? "Instalando…" : `Atualizar pra ${appUpdate.info.version}`}
+          </button>
+        )}
       </header>
 
       <Section title="Aparência">
@@ -203,7 +226,7 @@ export function SettingsApp() {
         </Row>
       </Section>
 
-      <UpdatesSection autoUpdate={settings.autoUpdate} onAutoUpdate={(autoUpdate) => update({ autoUpdate })} />
+      <UpdatesSection update={appUpdate} autoUpdate={settings.autoUpdate} onAutoUpdate={(autoUpdate) => update({ autoUpdate })} />
 
       <Section title="Sistema">
         <Row label="Iniciar com o macOS">
