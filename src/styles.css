@@ -1,0 +1,242 @@
+:root {
+  --island: #000;
+  --text: #fff;
+  --text-dim: rgb(255 255 255 / 0.55);
+  --track: rgb(255 255 255 / 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--text);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+}
+
+/* ---------- Island ---------- */
+
+.stage {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
+
+.island-wrap {
+  position: relative;
+  flex: none;
+}
+
+.island {
+  position: absolute;
+  inset: 0;
+  background: var(--island);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.island-content {
+  position: absolute;
+  top: 0;
+  transform-origin: 50% 0;
+}
+
+/* Ears: cantos côncavos que fundem a Island com a borda da tela */
+.ear {
+  position: absolute;
+  top: 0;
+}
+.ear-left {
+  right: 100%;
+  background: radial-gradient(circle at 0 100%, transparent 70.6%, var(--island) 71.2%);
+}
+.ear-right {
+  left: 100%;
+  background: radial-gradient(circle at 100% 100%, transparent 70.6%, var(--island) 71.2%);
+}
+
+/* ---------- Now Playing ---------- */
+
+.np-art {
+  display: block;
+  object-fit: cover;
+  background: #1a1a1a;
+  flex: none;
+}
+
+.np-compact {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.np-expanded {
+  height: 100%;
+  box-sizing: border-box;
+  padding-inline: 22px;
+  padding-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.np-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.np-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.np-title,
+.np-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.np-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.np-artist {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.np-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.np-time {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  min-width: 34px;
+}
+.np-time:last-child {
+  text-align: right;
+}
+
+.np-volume {
+  padding-inline: 4px;
+  color: var(--text-dim);
+}
+
+.np-vol-btn {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+.np-vol-btn:hover {
+  color: var(--text);
+}
+
+/* ---------- Slider ---------- */
+
+.slider {
+  flex: 1;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  touch-action: none;
+}
+.slider::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--track);
+  transition: height 0.15s;
+}
+.slider-fill {
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  transition: height 0.15s;
+}
+.slider:hover::before,
+.slider:hover .slider-fill,
+.slider[data-dragging="true"]::before,
+.slider[data-dragging="true"] .slider-fill {
+  height: 8px;
+}
+
+.np-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 28px;
+}
+
+.np-btn {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--text);
+}
+.np-btn:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+.np-btn[data-primary="true"] {
+  width: 44px;
+  height: 44px;
+}
+
+.np-icon-swap {
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- Equalizer ---------- */
+
+.eq {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.eq span {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleY(0.3);
+  animation: eq ease-in-out infinite alternate;
+  animation-play-state: paused;
+  transition: transform 0.3s;
+}
+.eq[data-playing="true"] span {
+  animation-play-state: running;
+}
+.eq[data-playing="false"] span {
+  animation: none;
+}
+
+@keyframes eq {
+  0% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+  100% { transform: scaleY(0.45); }
+}
