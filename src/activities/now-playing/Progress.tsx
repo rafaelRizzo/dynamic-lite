@@ -3,8 +3,8 @@ import { useNow } from "../../hooks/useNow";
 import { Slider } from "./Slider";
 import { positionAt, type Playback } from "./useNowPlaying";
 
-const fmt = (s: number) => {
-  const t = Math.max(0, Math.floor(s));
+const fmt = (t: number) => {
+  t = Math.max(0, t);
   return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
 };
 
@@ -21,10 +21,13 @@ export function Progress({ playback, color, onSeek, trailing }: ProgressProps) {
   const [preview, setPreview] = useState<number | null>(null);
   const duration = playback.state.track?.duration ?? 0;
   const position = preview ?? positionAt(playback, now);
+  // restante sai do mesmo segundo inteiro do decorrido: os dois mudam juntos
+  const elapsed = Math.floor(position);
+  const remaining = Math.floor(duration) - elapsed;
 
   return (
     <div className="np-row">
-      <span className="np-time">{fmt(position)}</span>
+      <span className="np-time">{fmt(elapsed)}</span>
       <Slider
         value={duration > 0 ? position / duration : 0}
         color={color}
@@ -35,7 +38,7 @@ export function Progress({ playback, color, onSeek, trailing }: ProgressProps) {
         }}
         onCancel={() => setPreview(null)}
       />
-      <span className="np-time">-{fmt(duration - position)}</span>
+      <span className="np-time">-{fmt(remaining)}</span>
       {trailing}
     </div>
   );
