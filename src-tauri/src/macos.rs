@@ -8,7 +8,7 @@ use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject};
 use objc2::MainThreadMarker;
 use objc2_app_kit::{
-    NSAccessibility, NSAccessibilityUnknownSubrole, NSAnimatablePropertyContainer,
+    NSAccessibility, NSAccessibilityFloatingWindowSubrole, NSAnimatablePropertyContainer,
     NSAnimationContext, NSApplication,
     NSApplicationDidChangeScreenParametersNotification, NSColor, NSEvent, NSGlassEffectView,
     NSGlassEffectViewStyle, NSHapticFeedbackManager, NSHapticFeedbackPattern,
@@ -88,8 +88,9 @@ pub fn configure_window(ns_window: *mut std::ffi::c_void) {
             | NSWindowCollectionBehavior::IgnoresCycle,
     );
     win.setHasShadow(false);
-    // seletores de janela (AltTab e afins) listam só subrole AXStandardWindow/AXDialog via Acessibilidade
-    win.setAccessibilitySubrole(Some(unsafe { NSAccessibilityUnknownSubrole }));
+    // seletores de janela (AltTab e afins) descartam AXFloatingWindow antes de qualquer outra regra;
+    // sem isso, ao receber clique ela vira AXMain e o AltTab a admite mesmo acima da menu bar
+    win.setAccessibilitySubrole(Some(unsafe { NSAccessibilityFloatingWindowSubrole }));
 }
 
 /// Cola a janela no topo central da tela (coordenadas Cocoa, origem embaixo à esquerda).
