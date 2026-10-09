@@ -54,6 +54,9 @@
 .st-header small {
   color: var(--text-dim);
 }
+.st-header-update {
+  margin-left: auto;
+}
 
 .st-logo {
   width: 52px;
