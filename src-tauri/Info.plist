@@ -6,5 +6,7 @@
   <true/>
   <key>NSAppleEventsUsageDescription</key>
   <string>Dynamic Lite controla o Spotify para mostrar e comandar a música tocando.</string>
+  <key>NSAudioCaptureUsageDescription</key>
+  <string>Dynamic Lite escuta o áudio do Spotify para o equalizer acompanhar a música. Nada é gravado.</string>
 </dict>
 </plist>

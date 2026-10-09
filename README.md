@@ -37,6 +37,7 @@ Dynamic Island para macOS: uma forma "líquida" que vive no notch e vira player 
    ```
    Ou tente abrir uma vez, vá em Ajustes do Sistema → Privacidade e Segurança e clique **Abrir Mesmo Assim** no aviso do Dynamic Lite.
 4. Abra o app e aceite o pedido de **Automação → Spotify**.
+5. Ao dar play, aceite o pedido de **gravação de áudio do sistema** (macOS 14.2+): o equalizer passa a seguir a música. Negando, ele só anima em loop.
 
 Precisa do Spotify desktop instalado.
 
@@ -136,6 +137,7 @@ Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`. Precisa do Rus
 |---|---|
 | Island não mostra a música | Ajustes do Sistema → Privacidade e Segurança → Automação → Dynamic Lite → ative **Spotify** |
 | Negou a permissão sem querer | `tccutil reset AppleEvents com.rafael.dynamic-lite` e abra o app de novo |
+| Equalizer não segue a música | Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e Áudio do Sistema → ative **Dynamic Lite** (ou `tccutil reset AudioCapture com.rafael.dynamic-lite`) |
 | "não pode ser aberto" / "está danificado" | `xattr -cr "/Applications/Dynamic Lite.app"` |
 | "não é compatível com este Mac" | Mac Intel com build só Apple Silicon: baixe o `.dmg` das Releases ou gere o universal |
 | Island na tela errada | Ajustes → Tela → **Mostrar em** |

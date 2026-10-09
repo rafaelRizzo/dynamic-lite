@@ -91,6 +91,8 @@ export const native = {
   onNotch: on<Notch>("island://notch"),
   onHover: on<boolean>("island://hover"),
   onSpotify: on<PlayerState>("spotify://state"),
+  /** Equalizer ao vivo: 4 bandas 0-1 (grave → agudo), ~30fps enquanto toca. Não chega sem permissão/macOS < 14.2. */
+  onLevels: on<number[]>("spotify://levels"),
   onSettings: on<Settings>("settings://changed"),
   onUpdate: on<UpdateInfo | null>("update://available"),
   onUpdateInstalling: on<null>("update://installing"),

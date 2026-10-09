@@ -332,6 +332,11 @@ body,
 .eq[data-playing="false"] span {
   animation: none;
 }
+/* níveis ao vivo do áudio: o transform vem do JS a ~30fps, a transição suaviza entre quadros */
+.eq[data-live] span {
+  animation: none;
+  transition: transform 50ms linear;
+}
 
 @keyframes eq {
   0% { transform: scaleY(0.25); }

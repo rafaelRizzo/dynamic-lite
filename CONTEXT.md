@@ -68,3 +68,7 @@ _Avoid_: Widget, module, plugin
 **Now Playing**:
 A Activity da faixa atual do Spotify: faixa, artista, capa, posição e controles.
 _Avoid_: Media, player, music widget
+
+**Equalizer**:
+As 4 barras do Now Playing que seguem o áudio do Spotify ao vivo (grave → agudo); sem permissão de áudio, viram animação em loop.
+_Avoid_: Visualizer, spectrum, waveform
