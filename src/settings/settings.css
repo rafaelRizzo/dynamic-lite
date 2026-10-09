@@ -56,24 +56,10 @@
 }
 
 .st-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 11px;
-  background: linear-gradient(160deg, #3a3a3c, #000);
-  position: relative;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
-}
-.st-logo::after {
-  content: "";
-  position: absolute;
-  top: 9px;
-  left: 50%;
-  translate: -50% 0;
-  width: 26px;
-  height: 9px;
-  border-radius: 5px;
-  background: #000;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
+  width: 52px;
+  height: 52px;
+  /* o PNG já tem a margem e a sombra da grade de ícones do macOS */
+  margin: -4px;
 }
 
 .st-section + .st-section {

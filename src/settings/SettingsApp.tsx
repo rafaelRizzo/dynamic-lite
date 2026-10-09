@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { usePlatform, useSettings } from "../hooks/useSettings";
 import { native } from "../lib/native";
 import { Note, Range, Row, Section, Segmented, Toggle } from "./controls";
+import icon from "../assets/icon.png";
 import "./settings.css";
 
 function useDisplays() {
@@ -37,7 +38,7 @@ export function SettingsApp() {
   return (
     <main className="settings">
       <header className="st-header">
-        <div className="st-logo" aria-hidden />
+        <img className="st-logo" src={icon} alt="" />
         <div>
           <h1>Dynamic Lite</h1>
           <small>Versão {version}</small>

@@ -1,3 +1,5 @@
+<p align="center"><img src="src-tauri/icons/icon.png" width="128" alt="Ícone do Dynamic Lite"></p>
+
 # Dynamic Lite
 
 [![Release](https://img.shields.io/github/v/release/rafaelRizzo/dynamic-lite?style=flat-square&label=release&color=2EA44F&labelColor=2EA44F&logo=github&logoColor=white)](https://github.com/rafaelRizzo/dynamic-lite/releases/latest)
@@ -110,11 +112,14 @@ Altere `version` em `src-tauri/tauri.conf.json` (vai pro nome do DMG e pro "Sobr
 
 ### Ícone
 
-```bash
-bun run tauri icon caminho/para/icone-1024.png
-```
+O ícone é desenhado em código por [generate-icon.py](scripts/generate-icon.py) (Python + Pillow). Pra mudar, edite o script e rode:
 
-Gera todos os tamanhos em `src-tauri/icons/`. Depois rode o build de novo.
+```bash
+python3 scripts/generate-icon.py
+bun run tauri icon src-tauri/icons/app-icon.png
+rm -rf src-tauri/icons/{android,ios,Square*Logo.png,StoreLogo.png,icon.ico,64x64.png}  # só macOS
+cp src-tauri/icons/icon.png src/assets/icon.png && sips -Z 256 src/assets/icon.png
+```
 
 ## Instalar
 
