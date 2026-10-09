@@ -50,6 +50,8 @@ pub struct Settings {
     pub show_menu_bar_icon: bool,
     /// "auto", "main" ou o nome da tela
     pub display: String,
+    pub all_spaces: bool,
+    pub hide_in_mission_control: bool,
 }
 
 impl Default for Settings {
@@ -64,6 +66,8 @@ impl Default for Settings {
             haptics: true,
             show_menu_bar_icon: true,
             display: "auto".into(),
+            all_spaces: true,
+            hide_in_mission_control: true,
         }
     }
 }
@@ -115,6 +119,9 @@ pub fn set_settings(app: AppHandle, value: Settings, settings: State<'_, SharedS
 
     if previous.display != value.display {
         crate::reposition(&app);
+    }
+    if (previous.all_spaces, previous.hide_in_mission_control) != (value.all_spaces, value.hide_in_mission_control) {
+        crate::apply_spaces_behavior(&app);
     }
     if previous.show_menu_bar_icon != value.show_menu_bar_icon {
         crate::menu::set_tray_visible(&app, value.show_menu_bar_icon);

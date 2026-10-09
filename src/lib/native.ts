@@ -22,7 +22,12 @@ export type PlayerState = {
   position: number;
   /** 0-100 */
   volume: number;
+  shuffle: boolean;
+  /** `track` (repetir a faixa) é emulado pelo app; o Spotify só tem repetir liga/desliga */
+  repeat: Repeat;
 };
+
+export type Repeat = "off" | "context" | "track";
 
 export type Style = "black" | "translucent" | "glass";
 
@@ -38,6 +43,8 @@ export type Settings = {
   showMenuBarIcon: boolean;
   /** "auto", "main" ou o nome da tela */
   display: string;
+  allSpaces: boolean;
+  hideInMissionControl: boolean;
 };
 
 export type Platform = { glassSupported: boolean };
@@ -70,6 +77,8 @@ export const native = {
   spotifyControl: (action: SpotifyAction) => invoke<void>("spotify_control", { action }),
   spotifySeek: (position: number) => invoke<void>("spotify_seek", { position }),
   spotifyVolume: (volume: number) => invoke<void>("spotify_volume", { volume }),
+  spotifyShuffle: (enabled: boolean) => invoke<void>("spotify_shuffle", { enabled }),
+  spotifyRepeat: (mode: Repeat) => invoke<void>("spotify_repeat", { mode }),
   /** Traz o Spotify pra frente na faixa (`spotify:track:...`), sem mexer na reprodução. */
   spotifyOpen: (uri: string) => invoke<void>("spotify_open", { uri }),
   onNotch: on<Notch>("island://notch"),

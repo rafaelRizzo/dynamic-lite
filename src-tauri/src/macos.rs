@@ -81,16 +81,28 @@ fn geometry(screen: &NSScreen) -> (Rect, Notch) {
 pub fn configure_window(ns_window: *mut std::ffi::c_void) {
     let win = unsafe { &*(ns_window as *const NSWindow) };
     win.setLevel(NSMainMenuWindowLevel + 3);
-    win.setCollectionBehavior(
-        NSWindowCollectionBehavior::CanJoinAllSpaces
-            | NSWindowCollectionBehavior::Stationary
-            | NSWindowCollectionBehavior::FullScreenAuxiliary
-            | NSWindowCollectionBehavior::IgnoresCycle,
-    );
     win.setHasShadow(false);
     // seletores de janela (AltTab e afins) descartam AXFloatingWindow antes de qualquer outra regra;
     // sem isso, ao receber clique ela vira AXMain e o AltTab a admite mesmo acima da menu bar
     win.setAccessibilitySubrole(Some(unsafe { NSAccessibilityFloatingWindowSubrole }));
+}
+
+/// Comportamento nas mesas (Spaces) e no Mission Control.
+/// `all_spaces`: aparece em todas as mesas; senão fica só na mesa onde o app abriu.
+/// `hide_in_mission_control`: `Transient` some no Mission Control (a barra de mesas fica no topo, onde a
+/// Island está); `Stationary` continua visível e parada nele.
+pub fn set_spaces_behavior(ns_window: *mut std::ffi::c_void, all_spaces: bool, hide_in_mission_control: bool) {
+    let win = unsafe { &*(ns_window as *const NSWindow) };
+    let mut behavior = NSWindowCollectionBehavior::FullScreenAuxiliary | NSWindowCollectionBehavior::IgnoresCycle;
+    if all_spaces {
+        behavior |= NSWindowCollectionBehavior::CanJoinAllSpaces;
+    }
+    behavior |= if hide_in_mission_control {
+        NSWindowCollectionBehavior::Transient
+    } else {
+        NSWindowCollectionBehavior::Stationary
+    };
+    win.setCollectionBehavior(behavior);
 }
 
 /// Cola a janela no topo central da tela (coordenadas Cocoa, origem embaixo à esquerda).

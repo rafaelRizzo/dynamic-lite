@@ -104,6 +104,19 @@ pub(crate) fn reposition(app: &AppHandle) {
     });
 }
 
+/// Aplica os Settings de mesas/Mission Control na janela da Island.
+pub(crate) fn apply_spaces_behavior(app: &AppHandle) {
+    let (all, hide) = {
+        let s = app.state::<SharedSettings>();
+        let s = s.lock().unwrap();
+        (s.all_spaces, s.hide_in_mission_control)
+    };
+    let Some(win) = app.get_webview_window(MAIN_LABEL) else { return };
+    let Ok(ns_window) = win.ns_window() else { return };
+    let ptr = ns_window as usize;
+    on_main(app, move |_| macos::set_spaces_behavior(ptr as *mut std::ffi::c_void, all, hide));
+}
+
 /// Click-through fora da Hit Region + eventos de hover pro frontend (ADR 0003).
 fn spawn_hover_tracker(app: AppHandle, layout: SharedLayout) {
     thread::spawn(move || {
@@ -149,6 +162,8 @@ pub fn run() {
             spotify::spotify_seek,
             spotify::spotify_volume,
             spotify::spotify_open,
+            spotify::spotify_shuffle,
+            spotify::spotify_repeat,
         ])
         .setup(move |app| {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -159,6 +174,7 @@ pub fn run() {
 
             let win = app.get_webview_window(MAIN_LABEL).expect("janela main ausente");
             macos::configure_window(win.ns_window()?);
+            apply_spaces_behavior(app.handle());
             win.set_ignore_cursor_events(true)?;
             reposition(app.handle());
             win.show()?;
