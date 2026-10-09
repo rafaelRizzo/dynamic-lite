@@ -221,18 +221,20 @@ body,
   height: 8px;
 }
 
-/* Spotify na ponta esquerda, prev/play/next centralizados, volume na ponta direita */
+/* shuffle/prev/play/next/repeat centralizados, como no Spotify */
 .np-controls {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto 1fr;
+  display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 28px;
+  gap: 22px;
 }
-.np-controls > :first-child {
-  justify-self: start;
-}
-.np-controls > :last-child {
-  justify-self: end;
+
+/* capa clicável: abre a faixa no Spotify */
+.np-art-btn {
+  all: unset;
+  flex: none;
+  border-radius: 12px;
+  cursor: pointer;
 }
 
 .np-btn {
@@ -247,15 +249,34 @@ body,
 .np-btn:hover {
   background: rgb(255 255 255 / 0.1);
 }
-.np-btn[data-variant="spotify"] {
+/* shuffle/repeat: apagados quando desligados; ligados na cor de destaque com ponto embaixo */
+.np-btn[data-on] {
+  position: relative;
   color: var(--text-dim);
-  transition: color 0.15s, background 0.15s;
 }
-.np-btn[data-variant="spotify"]:hover {
-  color: #1db954;
+.np-btn[data-on="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .np-btn[data-active="true"] {
   background: rgb(255 255 255 / 0.16);
+}
+.np-btn[data-small="true"] {
+  width: 26px;
+  height: 26px;
+  margin-left: -4px;
+  color: var(--text-dim);
+}
+.np-btn[data-small="true"]:hover,
+.np-btn[data-small="true"][data-active="true"] {
+  color: var(--text);
 }
 .np-btn[data-primary="true"] {
   width: 44px;

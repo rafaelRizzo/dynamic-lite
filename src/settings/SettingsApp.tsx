@@ -127,6 +127,22 @@ export function SettingsApp() {
             {missingDisplay && <option value={settings.display}>{settings.display} (desconectada)</option>}
           </select>
         </Row>
+        <Row label="Mesas" hint="Só a atual: fica presa na mesa ativa ao escolher">
+          <Segmented
+            value={settings.allSpaces ? "all" : "current"}
+            onChange={(v) => update({ allSpaces: v === "all" })}
+            options={[
+              { value: "all", label: "Todas" },
+              { value: "current", label: "Só a atual" },
+            ]}
+          />
+        </Row>
+        <Row label="Esconder no Mission Control" hint="Não cobre a barra de mesas no topo">
+          <Toggle
+            checked={settings.hideInMissionControl}
+            onChange={(hideInMissionControl) => update({ hideInMissionControl })}
+          />
+        </Row>
         <Row label="Esconder sem música" hint="Só em telas sem notch">
           <Toggle
             checked={settings.hideIdleWithoutNotch}

@@ -4,10 +4,12 @@ import { useArtworkColor } from "../../hooks/useArtworkColor";
 import { native, type Settings } from "../../lib/native";
 import type { Activity } from "../types";
 import { Equalizer } from "./Equalizer";
-import { NextIcon, PauseIcon, PlayIcon, PrevIcon, SpotifyIcon } from "./Icons";
+import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, RepeatOneIcon, ShuffleIcon } from "./Icons";
 import { Progress } from "./Progress";
 import { VolumeIcon, VolumePanel } from "./Volume";
 import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
+
+const REPEAT_LABEL = { off: "Ativar repetir", context: "Repetir só esta faixa", track: "Desativar repetir" } as const;
 
 const EXPANDED_WIDTH = 400;
 /** cabeçalho + progresso + controles + respiro inferior */
@@ -50,15 +52,20 @@ type ButtonProps = {
   primary?: boolean;
   active?: boolean;
   label?: string;
-  variant?: "spotify";
+  /** botão de modo (shuffle/repeat): ligado fica na cor de destaque com um ponto embaixo */
+  on?: boolean;
+  color?: string;
+  small?: boolean;
 };
 
-function Button({ onClick, children, primary, active, label, variant }: ButtonProps) {
+function Button({ onClick, children, primary, active, label, on, color, small }: ButtonProps) {
   return (
     <motion.button
       className="np-btn"
       data-primary={primary}
-      data-variant={variant}
+      data-small={small}
+      data-on={on}
+      style={on ? { color } : undefined}
       title={label}
       data-active={active}
       aria-label={label}
@@ -89,17 +96,35 @@ function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedPr
   return (
     <div className="np-expanded" style={{ paddingTop: topInset }}>
       <div className="np-head">
-        <Artwork url={track.artworkUrl} size={56} radius={12} />
+        <motion.button
+          className="np-art-btn"
+          onClick={() => native.spotifyOpen(track.id)}
+          title="Abrir no Spotify"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: "spring", stiffness: 600, damping: 22 }}
+        >
+          <Artwork url={track.artworkUrl} size={56} radius={12} />
+        </motion.button>
         <div className="np-meta">
           <div className="np-title" title={track.name}>{track.name}</div>
           <div className="np-artist" title={track.artist}>{track.artist}</div>
         </div>
         <Equalizer playing={playing} color={color} height={18} />
       </div>
-      <Progress playback={np.playback} color={color} onSeek={np.seek} />
+      <Progress
+        playback={np.playback}
+        color={color}
+        onSeek={np.seek}
+        trailing={
+          <Button onClick={() => setVolumeOpen(!volumeOpen)} active={volumeOpen} small label="Volume">
+            <VolumeIcon volume={state.volume} size={16} />
+          </Button>
+        }
+      />
       <div className="np-controls">
-        <Button onClick={() => native.spotifyOpen(track.id)} label="Abrir no Spotify" variant="spotify">
-          <SpotifyIcon />
+        <Button onClick={np.toggleShuffle} on={state.shuffle} color={color} label={state.shuffle ? "Desativar aleatório" : "Ativar aleatório"}>
+          <ShuffleIcon />
         </Button>
         <Button onClick={np.previous} label="Anterior"><PrevIcon /></Button>
         <Button onClick={np.toggle} primary>
@@ -117,8 +142,8 @@ function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedPr
           </AnimatePresence>
         </Button>
         <Button onClick={np.next} label="Próxima"><NextIcon /></Button>
-        <Button onClick={() => setVolumeOpen(!volumeOpen)} active={volumeOpen} label="Volume">
-          <VolumeIcon volume={state.volume} size={18} />
+        <Button onClick={np.cycleRepeat} on={state.repeat !== "off"} color={color} label={REPEAT_LABEL[state.repeat]}>
+          {state.repeat === "track" ? <RepeatOneIcon /> : <RepeatIcon />}
         </Button>
       </div>
       <AnimatePresence initial={false}>

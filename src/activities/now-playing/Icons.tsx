@@ -46,8 +46,27 @@ export const VolumeMutedIcon = ({ size = 16 }: IconProps) => (
   </svg>
 );
 
-export const SpotifyIcon = ({ size = 18 }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm4.6 14.4a.62.62 0 0 1-.86.2c-2.35-1.43-5.3-1.76-8.79-.96a.62.62 0 1 1-.28-1.21c3.81-.87 7.09-.5 9.73 1.12.3.18.39.56.2.85Zm1.22-2.73a.78.78 0 0 1-1.07.26c-2.69-1.65-6.78-2.13-9.96-1.17a.78.78 0 1 1-.45-1.49c3.63-1.1 8.15-.57 11.23 1.33.37.22.48.7.25 1.07Zm.1-2.84C14.7 8.92 9.37 8.74 6.3 9.68a.94.94 0 1 1-.54-1.8c3.53-1.07 9.4-.86 13.1 1.33a.94.94 0 0 1-.96 1.62Z" />
+export const ShuffleIcon = ({ size = 18 }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 7h3.5c2 0 3 1 4.2 2.8l2.6 4.4C14.5 16 15.5 17 17.5 17H21" />
+    <path d="M3 17h3.5c1.4 0 2.3-.5 3.1-1.4M14.4 8.4c.8-.9 1.7-1.4 3.1-1.4H21" />
+    <path d="m18 4 3 3-3 3M18 14l3 3-3 3" />
+  </svg>
+);
+
+export const RepeatIcon = ({ size = 18 }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3l3 3-3 3" />
+    <path d="M4 12V9.5A3.5 3.5 0 0 1 7.5 6H20M7 21l-3-3 3-3" />
+    <path d="M20 12v2.5a3.5 3.5 0 0 1-3.5 3.5H4" />
+  </svg>
+);
+
+export const RepeatOneIcon = ({ size = 18 }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3l3 3-3 3" />
+    <path d="M4 12V9.5A3.5 3.5 0 0 1 7.5 6H20M7 21l-3-3 3-3" />
+    <path d="M20 12v2.5a3.5 3.5 0 0 1-3.5 3.5H4" />
+    <path d="M11 10.5l1.5-1v5" strokeWidth="1.7" />
   </svg>
 );

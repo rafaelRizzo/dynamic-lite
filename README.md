@@ -45,6 +45,8 @@ Clique direito na Island → **Ajustes…** (ou ícone da menu bar). Tudo vale n
 | Comportamento | Abrir com | Passar o mouse (com atraso ajustável), Clique |
 | | Toque no trackpad | Clique leve sentido no dedo ao abrir e fechar |
 | Tela | Mostrar em | Automática (tela com notch), Principal, ou uma tela pelo nome |
+| | Mesas | Todas, ou só a atual (fica presa na mesa ativa ao escolher) |
+| | Esconder no Mission Control | Não cobre a barra de mesas no topo |
 | | Esconder sem música | Só em telas sem notch |
 | Sistema | Iniciar com o macOS | |
 | | Ícone na menu bar | Sem ele, o acesso é pelo clique direito |

@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { native, subscribe, type PlayerState } from "../../lib/native";
+import { native, subscribe, type PlayerState, type Repeat } from "../../lib/native";
 
 export type Playback = { state: PlayerState; receivedAt: number };
 
 /** Volume restaurado ao desmutar quando não há um anterior conhecido. */
 const DEFAULT_VOLUME = 50;
 
-const EMPTY: Playback = { state: { status: "closed", track: null, position: 0, volume: 0 }, receivedAt: 0 };
+/** Mesma ordem do botão do Spotify: desligado → repetir tudo → repetir faixa. */
+const NEXT_REPEAT: Record<Repeat, Repeat> = { off: "context", context: "track", track: "off" };
+
+const EMPTY: Playback = { state: { status: "closed", track: null, position: 0, volume: 0, shuffle: false, repeat: "off" }, receivedAt: 0 };
 
 /** Posição atual interpolada desde a última leitura do Spotify. */
 export function positionAt({ state, receivedAt }: Playback, now: number): number {
@@ -16,8 +19,9 @@ export function positionAt({ state, receivedAt }: Playback, now: number): number
 
 export function useNowPlaying() {
   const [playback, setPlayback] = useState<Playback>(EMPTY);
-  const volumeRef = useRef(0);
-  volumeRef.current = playback.state.volume;
+  // estado atual pra callbacks estáveis; efeitos (comandos ao Spotify) nunca dentro do setState
+  const stateRef = useRef(playback.state);
+  stateRef.current = playback.state;
   // o Spotify não tem mute: mutar é volume 0, lembrando o anterior pra voltar
   const beforeMute = useRef(DEFAULT_VOLUME);
 
@@ -50,13 +54,25 @@ export function useNowPlaying() {
   }, []);
 
   const toggleMute = useCallback(() => {
-    setVolume(volumeRef.current > 0 ? 0 : beforeMute.current);
+    setVolume(stateRef.current.volume > 0 ? 0 : beforeMute.current);
   }, [setVolume]);
+
+  const toggleShuffle = useCallback(() => {
+    const shuffle = !stateRef.current.shuffle;
+    setPlayback((p) => ({ ...p, state: { ...p.state, shuffle } }));
+    native.spotifyShuffle(shuffle);
+  }, []);
+
+  const cycleRepeat = useCallback(() => {
+    const repeat = NEXT_REPEAT[stateRef.current.repeat];
+    setPlayback((p) => ({ ...p, state: { ...p.state, repeat } }));
+    native.spotifyRepeat(repeat);
+  }, []);
 
   const next = useCallback(() => native.spotifyControl("next"), []);
   const previous = useCallback(() => native.spotifyControl("previous"), []);
 
-  return { playback, toggle, seek, setVolume, toggleMute, next, previous };
+  return { playback, toggle, seek, setVolume, toggleMute, toggleShuffle, cycleRepeat, next, previous };
 }
 
 export type NowPlayingControls = ReturnType<typeof useNowPlaying>;
