@@ -108,7 +108,9 @@ Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`.
 
 ### Versão
 
-Altere `version` em `src-tauri/tauri.conf.json` (vai pro nome do DMG e pro "Sobre" do app).
+A versão do app vem da última tag `vX.Y.Z` do git: `bun run tauri dev/build` passa por [scripts/tauri.sh](scripts/tauri.sh), que lê a tag e injeta no build sem editar arquivos. Sem tag, vale a do `tauri.conf.json`. Pra forçar uma versão: `APP_VERSION=1.2.3 bun run tauri build`.
+
+O `v0.1.0` que o Cargo mostra ao compilar é a versão do pacote Rust (`Cargo.toml`), não a do app; ela não muda.
 
 ### Ícone
 
@@ -148,7 +150,7 @@ A versão sai dos commits desde a última tag ([Conventional Commits](https://ww
 | `!` ou `BREAKING CHANGE` no corpo | `feat!: Trocado formato das Settings` | 1.0.0 |
 | `docs`, `chore`, `ci`, `style`, `test`, `build` | `docs: README` | sem release |
 
-A tag é a fonte da verdade: a `main` não recebe commit de versão; o `tauri.conf.json` só é atualizado dentro do build. A lógica está em [next-version.sh](.github/scripts/next-version.sh) (dá pra rodar local pra ver a próxima versão). Também dá pra disparar manualmente em Actions → Release → Run workflow.
+A tag é a fonte da verdade: a `main` não recebe commit de versão. No CI a tag nova ainda não existe na hora do build, então a action passa a versão por `APP_VERSION` pro [tauri.sh](scripts/tauri.sh). A lógica está em [next-version.sh](.github/scripts/next-version.sh) (dá pra rodar local pra ver a próxima versão). Também dá pra disparar manualmente em Actions → Release → Run workflow.
 
 ## Distribuir pra outras pessoas
 

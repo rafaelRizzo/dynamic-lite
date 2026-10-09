@@ -57,15 +57,11 @@ jobs:
       - name: Instalar dependências
         run: bun install --frozen-lockfile
 
-      # a tag é a fonte da verdade da versão; o arquivo só é alterado dentro do build
-      - name: Aplicar versão
-        run: |
-          jq --arg v "${{ needs.version.outputs.version }}" '.version = $v' src-tauri/tauri.conf.json > tauri.conf.tmp
-          mv tauri.conf.tmp src-tauri/tauri.conf.json
-
+      # a tag ainda não existe aqui: scripts/tauri.sh usa APP_VERSION no lugar dela
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ needs.version.outputs.version }}
         with:
           tauriScript: bun run tauri
           args: --target universal-apple-darwin
