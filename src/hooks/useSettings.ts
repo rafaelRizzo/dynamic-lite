@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { native, subscribe, type Platform, type Settings } from "../lib/native";
 
 /** Settings sincronizadas entre janelas: o Rust é a fonte da verdade e avisa cada mudança. */
 export function useSettings() {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const current = useRef<Settings | null>(null);
+  current.current = settings;
 
   useEffect(() => {
     native.getSettings().then(setSettings);
@@ -11,11 +13,14 @@ export function useSettings() {
   }, []);
 
   const update = useCallback((patch: Partial<Settings>) => {
-    setSettings((current) => {
-      if (!current) return current;
-      const next = { ...current, ...patch };
-      native.setSettings(next);
-      return next;
+    if (!current.current) return;
+    const next = { ...current.current, ...patch };
+    current.current = next;
+    setSettings(next);
+    // o Rust recusou (ex.: valor que ele não conhece): volta pro que está salvo, em vez de fingir que aplicou
+    native.setSettings(next).catch((e) => {
+      console.error("set_settings falhou:", e);
+      native.getSettings().then(setSettings);
     });
   }, []);
 

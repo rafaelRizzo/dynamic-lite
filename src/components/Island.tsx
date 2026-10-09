@@ -82,8 +82,13 @@ export function Island({ notch, activity, hovered, settings, platform }: IslandP
         : null;
   const glassContent = glassOpen ? activity!.expanded({ topInset: notch.height + 6 }) : null;
 
+  // Themed pinta Compact e Expanded; Idle continua preto (é só o Notch)
+  const theme = style === "themed" && mode !== "idle" ? activity?.theme : null;
+  const tint = theme ? theme.background : `rgb(0 0 0 / ${style === "translucent" && expanded ? settings.opacity : 1})`;
+  // no Themed a cor preenche tudo, faixa do Notch e Ears incluídas
   const islandVars = {
-    "--island-alpha": style === "translucent" && expanded ? settings.opacity : 1,
+    "--island": theme ? theme.background : "#000",
+    "--island-tint": tint,
     "--solid": `${notch.height}px`,
   } as CSSProperties;
 
@@ -97,6 +102,7 @@ export function Island({ notch, activity, hovered, settings, platform }: IslandP
     >
       <motion.div
         className="island-wrap"
+        style={islandVars}
         initial={false}
         animate={{ width: pill.width, height: pill.height }}
         transition={LIQUID}
@@ -106,7 +112,7 @@ export function Island({ notch, activity, hovered, settings, platform }: IslandP
         <motion.span className="ear ear-right" initial={false} animate={{ width: pill.ear, height: pill.ear }} transition={LIQUID} />
         <motion.div
           className="island"
-          style={islandVars}
+          data-ink={theme?.ink ?? "light"}
           initial={false}
           animate={{ borderBottomLeftRadius: pill.radius, borderBottomRightRadius: pill.radius }}
           transition={LIQUID}

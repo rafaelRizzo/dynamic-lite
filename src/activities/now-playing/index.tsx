@@ -166,8 +166,14 @@ export function useNowPlayingActivity(settings: Settings): Activity | null {
   const np = useNowPlaying();
   const [volumeOpen, setVolumeOpen] = useState(false);
   const { state } = np.playback;
-  const artworkColor = useArtworkColor(state.track?.artworkUrl);
-  const color = settings.accent === "white" ? "rgb(255 255 255)" : artworkColor;
+  const palette = useArtworkColor(state.track?.artworkUrl);
+  // no Themed o fundo já é a cor da capa: o destaque segue o texto pra manter contraste
+  const color =
+    settings.style === "themed" && palette.theme
+      ? "var(--text)"
+      : settings.accent === "white"
+        ? "rgb(255 255 255)"
+        : palette.accent;
   if (!state.track || (state.status !== "playing" && state.status !== "paused")) return null;
   return {
     id: "now-playing",
@@ -178,5 +184,6 @@ export function useNowPlayingActivity(settings: Settings): Activity | null {
     ),
     // a Island "escorre" pra baixo quando o painel de volume abre
     expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY + (volumeOpen ? VOLUME_PANEL : 0) },
+    theme: palette.theme,
   };
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { Theme } from "../hooks/useArtworkColor";
 
 /** Algo em andamento que a Island pode mostrar. */
 export type Activity = {
@@ -11,4 +12,6 @@ export type Activity = {
   expanded: (layout: { topInset: number }) => ReactNode;
   /** Tamanho do conteúdo do Expanded sem o `topInset`. */
   expandedSize: { width: number; height: number };
+  /** Fundo do Expanded no Style Themed; sem ele, fica preto. */
+  theme?: Theme | null;
 };

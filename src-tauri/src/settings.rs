@@ -18,6 +18,8 @@ pub enum Style {
     Black,
     Translucent,
     Glass,
+    /// fundo na cor da capa da música
+    Themed,
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Default)]

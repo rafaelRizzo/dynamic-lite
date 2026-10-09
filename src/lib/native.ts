@@ -29,7 +29,7 @@ export type PlayerState = {
 
 export type Repeat = "off" | "context" | "track";
 
-export type Style = "black" | "translucent" | "glass";
+export type Style = "black" | "translucent" | "glass" | "themed";
 
 export type Settings = {
   style: Style;
