@@ -21,12 +21,20 @@ jobs:
       version: ${{ steps.next.outputs.version }}
       notes: ${{ steps.next.outputs.notes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # precisa do histórico e das tags
 
       - id: next
         run: .github/scripts/next-version.sh >> "$GITHUB_OUTPUT"
+
+      # a tag sai já no começo, apontando pro commit deste push: se a main andar durante o build,
+      # o GitHub não deixa o GITHUB_TOKEN criar a tag lá no fim (Resource not accessible by integration)
+      - name: Criar tag
+        if: steps.next.outputs.release == 'true'
+        run: |
+          git tag "v${{ steps.next.outputs.version }}" "$GITHUB_SHA"
+          git push origin "v${{ steps.next.outputs.version }}"
 
       - name: Resumo
         run: |
@@ -42,7 +50,7 @@ jobs:
     if: needs.version.outputs.release == 'true'
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
 
@@ -70,3 +78,8 @@ jobs:
           releaseBody: ${{ needs.version.outputs.notes }}
           releaseDraft: false
           prerelease: false
+
+      # build falhou: apaga a tag pra próxima versão não pular esta
+      - name: Remover tag
+        if: failure()
+        run: git push origin --delete "v${{ needs.version.outputs.version }}" || true
