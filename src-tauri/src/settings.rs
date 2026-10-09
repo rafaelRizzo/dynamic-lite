@@ -18,6 +18,8 @@ pub enum Style {
     Black,
     Translucent,
     Glass,
+    /// fundo na cor da capa da música
+    Themed,
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
@@ -61,7 +63,7 @@ impl Default for Settings {
             style: Style::Black,
             opacity: 0.8,
             expand_on: ExpandOn::Hover,
-            hover_delay_ms: 140,
+            hover_delay_ms: 100,
             hide_idle_without_notch: true,
             accent: Accent::Artwork,
             haptics: true,

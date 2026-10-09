@@ -200,7 +200,7 @@ thread_local! {
 const GLASS_OVERSCAN: f64 = 40.0;
 
 /// Mesma mola do React (Motion): o vidro e o conteúdo andam juntos.
-const SPRING: (f64, f64, f64) = (380.0, 26.0, 0.9);
+const SPRING: (f64, f64, f64) = (560.0, 31.0, 0.9);
 
 pub fn glass_supported() -> bool {
     AnyClass::get(c"NSGlassEffectView").is_some()

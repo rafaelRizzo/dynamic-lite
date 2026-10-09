@@ -121,7 +121,7 @@ export function SettingsApp() {
       </header>
 
       <Section title="Aparência">
-        <Row label="Estilo" hint="Vale pro painel aberto; o compacto é sempre preto">
+        <Row label="Estilo" hint="Vale pro painel aberto; o compacto é preto, exceto no Capa">
           <Segmented
             value={settings.style}
             onChange={(style) => update({ style })}
@@ -134,6 +134,7 @@ export function SettingsApp() {
                 disabled: !platform.glassSupported,
                 title: platform.glassSupported ? "Liquid Glass" : "Requer macOS 26 ou mais novo",
               },
+              { value: "themed", label: "Capa", title: "Fundo na cor da capa da música" },
             ]}
           />
         </Row>
@@ -150,16 +151,20 @@ export function SettingsApp() {
             />
           </Row>
         )}
-        <Row label="Cor de destaque" hint="Progresso e equalizer">
-          <Segmented
-            value={settings.accent}
-            onChange={(accent) => update({ accent })}
-            options={[
-              { value: "artwork", label: "Da capa" },
-              { value: "white", label: "Branca" },
-            ]}
-          />
-        </Row>
+        {settings.style === "themed" ? (
+          <Note>Compacta e aberta seguem a cor da capa; texto e controles ficam claros ou escuros pra manter o contraste.</Note>
+        ) : (
+          <Row label="Cor de destaque" hint="Progresso e equalizer">
+            <Segmented
+              value={settings.accent}
+              onChange={(accent) => update({ accent })}
+              options={[
+                { value: "artwork", label: "Da capa" },
+                { value: "white", label: "Branca" },
+              ]}
+            />
+          </Row>
+        )}
       </Section>
 
       <Section title="Comportamento">

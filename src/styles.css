@@ -3,6 +3,10 @@
   --text: #fff;
   --text-dim: rgb(255 255 255 / 0.55);
   --track: rgb(255 255 255 / 0.18);
+  /* fundos de hover/ativo/painel sobre a Island */
+  --fill-1: rgb(255 255 255 / 0.07);
+  --fill-2: rgb(255 255 255 / 0.1);
+  --fill-3: rgb(255 255 255 / 0.16);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   color: var(--text);
@@ -22,11 +26,16 @@ body,
 
 /* ---------- Island ---------- */
 
-/* registrada pra transição suave da opacidade no Style Translucent */
-@property --island-alpha {
-  syntax: "<number>";
+/* registradas pra transição suave do fundo (opacidade no Translucent, cor da capa no Themed) */
+@property --island {
+  syntax: "<color>";
   inherits: true;
-  initial-value: 1;
+  initial-value: #000;
+}
+@property --island-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #000;
 }
 
 .stage {
@@ -39,6 +48,7 @@ body,
 .island-wrap {
   position: relative;
   flex: none;
+  transition: --island 0.35s ease, --island-tint 0.35s ease;
 }
 
 .island {
@@ -48,11 +58,21 @@ body,
   background: linear-gradient(
     to bottom,
     var(--island) 0 var(--solid),
-    rgb(0 0 0 / var(--island-alpha)) calc(var(--solid) + 14px)
+    var(--island-tint) calc(var(--solid) + 14px)
   );
-  transition: --island-alpha 0.35s ease;
   overflow: hidden;
   isolation: isolate;
+}
+
+/* Themed com capa clara: texto e fundos de controle escuros pra manter contraste */
+.island[data-ink="dark"] {
+  --text: rgb(0 0 0 / 0.88);
+  --text-dim: rgb(0 0 0 / 0.55);
+  --track: rgb(0 0 0 / 0.16);
+  --fill-1: rgb(0 0 0 / 0.07);
+  --fill-2: rgb(0 0 0 / 0.08);
+  --fill-3: rgb(0 0 0 / 0.14);
+  color: var(--text);
 }
 
 .island-content {
@@ -161,7 +181,7 @@ body,
   height: 40px;
   padding: 0 14px 0 5px;
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.07);
+  background: var(--fill-1);
 }
 
 .np-mute {
@@ -175,7 +195,7 @@ body,
   transition: background 0.15s, color 0.15s;
 }
 .np-mute:hover {
-  background: rgb(255 255 255 / 0.1);
+  background: var(--fill-2);
 }
 .np-mute[data-muted="true"] {
   color: rgb(255 105 97);
@@ -247,7 +267,7 @@ body,
   color: var(--text);
 }
 .np-btn:hover {
-  background: rgb(255 255 255 / 0.1);
+  background: var(--fill-2);
 }
 /* shuffle/repeat: apagados quando desligados; ligados na cor de destaque com ponto embaixo */
 .np-btn[data-on] {
@@ -266,7 +286,7 @@ body,
   background: currentColor;
 }
 .np-btn[data-active="true"] {
-  background: rgb(255 255 255 / 0.16);
+  background: var(--fill-3);
 }
 .np-btn[data-small="true"] {
   width: 26px;

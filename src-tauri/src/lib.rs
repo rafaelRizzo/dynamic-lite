@@ -26,7 +26,7 @@ type SharedLayout = Arc<Mutex<Layout>>;
 const MAIN_LABEL: &str = "main";
 const HOVER_EVENT: &str = "island://hover";
 const NOTCH_EVENT: &str = "island://notch";
-const HOVER_POLL: Duration = Duration::from_millis(30);
+const HOVER_POLL: Duration = Duration::from_millis(16);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

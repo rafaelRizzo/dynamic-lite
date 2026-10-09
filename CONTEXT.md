@@ -28,7 +28,7 @@ _Avoid_: Hover area, bounds
 A Island do tamanho exato do Notch, sem conteúdo; em telas sem Notch pode ficar escondida.
 
 **Compact**:
-A Island esticada para os lados do Notch, mostrando um resumo da Activity; sempre preta, qualquer que seja o Style.
+A Island esticada para os lados do Notch, mostrando um resumo da Activity; preta, exceto no Style Themed, que usa a cor da capa.
 _Avoid_: Minimal, collapsed
 
 **Expanded**:
@@ -38,7 +38,7 @@ _Avoid_: Open, full, large
 ### Aparência
 
 **Style**:
-A aparência do Expanded: Black, Translucent ou Glass.
+A aparência do Expanded: Black, Translucent, Glass ou Themed (fundo na cor da capa da música).
 _Avoid_: Theme, skin, mode
 
 **Target Screen**:
