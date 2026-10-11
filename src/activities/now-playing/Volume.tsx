@@ -50,6 +50,7 @@ export function VolumePanel({ volume, color, onChange, onToggleMute }: PanelProp
         onClick={onToggleMute}
         whileTap={{ scale: 0.85 }}
         aria-label={volume === 0 ? "Desmutar" : "Mutar"}
+        data-tip={volume === 0 ? "Desmutar" : "Mutar"}
       >
         <VolumeIcon volume={volume} size={18} />
       </motion.button>

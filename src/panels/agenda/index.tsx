@@ -63,9 +63,9 @@ function Expanded({ topInset }: { topInset: number }) {
     <div className="ag-expanded" style={{ paddingTop: topInset }}>
       <div className="ag-month">
         <div className="ag-month-head">
-          <button className="ag-nav" onClick={() => goMonth(-1)} title="Mês anterior" aria-label="Mês anterior"><Chevron dir="left" /></button>
-          <button className="ag-month-title" onClick={goToday} title="Ir pra hoje">{monthTitle(view.year, view.month)}</button>
-          <button className="ag-nav" onClick={() => goMonth(1)} title="Próximo mês" aria-label="Próximo mês"><Chevron dir="right" /></button>
+          <button className="ag-nav" onClick={() => goMonth(-1)} data-tip="Mês anterior" aria-label="Mês anterior"><Chevron dir="left" /></button>
+          <button className="ag-month-title" onClick={goToday} data-tip="Ir pra hoje">{monthTitle(view.year, view.month)}</button>
+          <button className="ag-nav" onClick={() => goMonth(1)} data-tip="Próximo mês" aria-label="Próximo mês"><Chevron dir="right" /></button>
         </div>
         <div className="ag-grid">
           {WEEKDAYS.map((w, i) => (
@@ -97,9 +97,9 @@ function Expanded({ topInset }: { topInset: number }) {
           {items.map((it) => (
             <li key={it.key} className="ag-row" data-overdue={it.kind === "reminder" && it.overdue}>
               <span className="ag-time">{it.kind === "event" && it.allDay ? "dia todo" : time(it.at)}</span>
-              <span className="ag-title" title={it.title}>{it.title}</span>
+              <span className="ag-title" data-tip={it.title} data-tip-overflow>{it.title}</span>
               {it.kind === "reminder" ? (
-                <button className="ag-check" title="Concluir" onClick={() => native.remindersDone(it.id)}>✓</button>
+                <button className="ag-check" data-tip="Concluir" aria-label="Concluir" onClick={() => native.remindersDone(it.id)}>✓</button>
               ) : (
                 <span className="ag-dot" />
               )}
@@ -124,7 +124,7 @@ function Expanded({ topInset }: { topInset: number }) {
           data-invalid={invalid}
           value={text}
           placeholder={invalid ? `Não entendi. Tente: ${HINT}` : "Novo lembrete: 20m ligar"}
-          title={HINT}
+          data-tip={HINT}
           maxLength={120}
           onChange={(e) => {
             setText(e.target.value);

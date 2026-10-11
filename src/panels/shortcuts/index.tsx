@@ -22,7 +22,6 @@ function Expanded({ ids, topInset }: { ids: string[]; topInset: number }) {
             <motion.button
               key={s.id}
               className="sc-tile"
-              title={s.label}
               onClick={() => native.openSystemSettings(s.url).catch((e) => console.error("open_system_settings falhou:", e))}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.92 }}

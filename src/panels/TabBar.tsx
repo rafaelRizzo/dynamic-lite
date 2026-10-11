@@ -5,8 +5,8 @@ import type { Panel } from "../activities/types";
 export const TAB_BAR_HEIGHT = 40;
 
 /** Cada aba ocupa um slot de largura fixa: nada muda de tamanho no clique, só a pílula anda. */
-const SLOT = 40;
-const GAP = 2;
+const SLOT = 34;
+const GAP = 0;
 
 type TabBarProps = { panels: Panel[]; active: string; onSelect: (id: string) => void };
 
@@ -31,7 +31,8 @@ export function TabBar({ panels, active, onSelect }: TabBarProps) {
             role="tab"
             aria-selected={p.id === active}
             aria-label={p.label}
-            title={p.label}
+            data-tip={p.label}
+            data-tip-side="bottom"
             data-active={p.id === active}
             onClick={() => onSelect(p.id)}
           >
