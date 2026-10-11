@@ -1,17 +1,23 @@
 #[cfg(not(target_os = "macos"))]
 compile_error!("Dynamic Lite só roda no macOS");
 
+mod calendar;
+mod claude_usage;
 mod equalizer;
 mod layout;
 mod macos;
 mod menu;
+mod multitouch;
+mod pomodoro;
+mod scheduler;
 mod settings;
+mod sound;
 mod spotify;
 mod updater;
 
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use objc2::MainThreadMarker;
 use serde::Serialize;
@@ -27,7 +33,10 @@ type SharedLayout = Arc<Mutex<Layout>>;
 const MAIN_LABEL: &str = "main";
 const HOVER_EVENT: &str = "island://hover";
 const NOTCH_EVENT: &str = "island://notch";
+const SWIPE_EVENT: &str = "island://swipe";
 const HOVER_POLL: Duration = Duration::from_millis(16);
+/// Intervalo mínimo entre dois gestos de troca de aba.
+const SWIPE_COOLDOWN: Duration = Duration::from_millis(450);
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -79,6 +88,37 @@ fn set_glass(app: AppHandle, target: Option<macos::GlassShape>, rest: macos::Gla
 #[tauri::command]
 fn haptic(app: AppHandle) {
     on_main(&app, |_| macos::haptic());
+}
+
+/// Abre um painel dos Ajustes do Sistema; qualquer outra URL é recusada.
+#[tauri::command]
+fn open_system_settings(url: String) -> Result<(), String> {
+    if !url.starts_with("x-apple.systempreferences:") || url.chars().any(|c| c.is_whitespace() || c.is_control()) {
+        return Err("URL não permitida".into());
+    }
+    std::process::Command::new("open").arg(&url).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
+/// Gesto de 3 dedos pro lado: avisa o frontend se o mouse está na Island. `forward`: dedos pra esquerda.
+fn handle_swipe(app: &AppHandle, layout: &SharedLayout, forward: bool) {
+    static LAST: Mutex<Option<Instant>> = Mutex::new(None);
+    let (enabled, invert) = {
+        let s = app.state::<SharedSettings>();
+        let s = s.lock().unwrap();
+        (s.swipe_tabs, s.invert_swipe)
+    };
+    let (x, y) = macos::mouse_location();
+    if !enabled || !layout.lock().unwrap().hit(x, y) {
+        return;
+    }
+    // as duas fontes (toque bruto e swipe do sistema) podem disparar o mesmo gesto
+    let mut last = LAST.lock().unwrap();
+    if last.is_some_and(|t| t.elapsed() < SWIPE_COOLDOWN) {
+        return;
+    }
+    *last = Some(Instant::now());
+    let dir: i8 = if forward != invert { 1 } else { -1 };
+    let _ = app.emit(SWIPE_EVENT, dir);
 }
 
 /// Recalcula Target Screen/Notch e reposiciona a janela.
@@ -161,9 +201,25 @@ pub fn run() {
             list_displays,
             set_glass,
             haptic,
+            open_system_settings,
             menu::show_context_menu,
             settings::get_settings,
             settings::set_settings,
+            scheduler::pomodoro_state,
+            scheduler::pomodoro_start,
+            scheduler::pomodoro_pause,
+            scheduler::pomodoro_reset,
+            scheduler::pomodoro_skip,
+            scheduler::reminders_list,
+            scheduler::reminders_add,
+            scheduler::reminders_snooze,
+            scheduler::reminders_done,
+            claude_usage::claude_usage,
+            calendar::calendar_access,
+            calendar::calendar_request_access,
+            calendar::calendar_events,
+            sound::list_sounds,
+            sound::play_sound,
             settings::get_autostart,
             settings::set_autostart,
             spotify::spotify_state,
@@ -197,11 +253,32 @@ pub fn run() {
             let s = spotify.clone();
             macos::on_spotify_change(move || s.wake());
 
+            // 3 dedos pro lado com o mouse na Island: o frontend troca de aba se ela estiver aberta.
+            // Toque bruto do trackpad (não depende dos gestos do sistema) e o evento de swipe do macOS como reserva.
+            let swipe = {
+                let (app, layout) = (app.handle().clone(), layout.clone());
+                std::sync::Arc::new(move |forward: bool| handle_swipe(&app, &layout, forward))
+            };
+            let raw = swipe.clone();
+            if !multitouch::start(move |left| raw(left)) {
+                eprintln!("MultitouchSupport indisponível: só o gesto de swipe do sistema troca de aba");
+            }
+            macos::on_swipe(move |dx| {
+                if dx != 0.0 {
+                    swipe(dx > 0.0);
+                }
+            });
+
             menu::setup_tray(app.handle(), show_icon)?;
             spawn_hover_tracker(app.handle().clone(), layout.clone());
             let eq = equalizer::spawn(app.handle().clone());
             spotify::spawn_watcher(app.handle().clone(), spotify.clone(), wake_rx, eq);
             updater::spawn_checker(app.handle().clone());
+
+            let (sched_tx, sched_rx) = mpsc::channel();
+            let sched = scheduler::Scheduler::new(app.handle(), sched_tx);
+            app.manage::<scheduler::SharedScheduler>(sched.clone());
+            scheduler::spawn(app.handle().clone(), sched, sched_rx);
             Ok(())
         })
         .run(tauri::generate_context!())

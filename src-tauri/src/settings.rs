@@ -46,16 +46,45 @@ pub struct Settings {
     pub opacity: f64,
     pub expand_on: ExpandOn,
     pub hover_delay_ms: u32,
+    /// espera depois que o mouse sai antes de fechar; voltar nesse intervalo cancela
+    pub hover_exit_delay_ms: u32,
     pub hide_idle_without_notch: bool,
     pub accent: Accent,
     pub haptics: bool,
+    /// deslizar com 3 dedos na Island aberta troca de aba
+    pub swipe_tabs: bool,
+    /// inverte a direção do gesto
+    pub invert_swipe: bool,
     pub show_menu_bar_icon: bool,
     /// "auto", "main" ou o nome da tela
     pub display: String,
     pub all_spaces: bool,
     pub hide_in_mission_control: bool,
     pub auto_update: bool,
+    pub show_claude_usage: bool,
+    /// consulta o limite direto na conta (token do Keychain) em vez de só ler o arquivo do statusline
+    pub claude_live_limits: bool,
+    pub show_agenda: bool,
+    /// avisa N min antes de cada evento do Calendário; 0 desliga
+    pub calendar_lead_min: u32,
+    pub show_pomodoro: bool,
+    /// minutos
+    pub focus_min: u32,
+    pub short_break_min: u32,
+    pub long_break_min: u32,
+    /// pausa longa a cada N focos
+    pub long_every: u32,
+    pub auto_start_next: bool,
+    /// nome de um som de /System/Library/Sounds
+    pub sfx: String,
+    /// 0.1-1.0
+    pub sfx_volume: f64,
+    pub show_shortcuts: bool,
+    /// ids do catálogo de atalhos do frontend, na ordem da grade
+    pub shortcuts: Vec<String>,
 }
+
+const MAX_SHORTCUTS: usize = 12;
 
 impl Default for Settings {
     fn default() -> Self {
@@ -64,25 +93,68 @@ impl Default for Settings {
             opacity: 0.8,
             expand_on: ExpandOn::Hover,
             hover_delay_ms: 100,
+            hover_exit_delay_ms: 300,
             hide_idle_without_notch: true,
             accent: Accent::Artwork,
             haptics: true,
+            swipe_tabs: true,
+            invert_swipe: false,
             show_menu_bar_icon: true,
             display: "auto".into(),
             all_spaces: true,
             hide_in_mission_control: true,
             auto_update: true,
+            show_claude_usage: true,
+            claude_live_limits: true,
+            show_agenda: true,
+            calendar_lead_min: 5,
+            show_pomodoro: true,
+            focus_min: 25,
+            short_break_min: 5,
+            long_break_min: 15,
+            long_every: 4,
+            auto_start_next: false,
+            sfx: "Glass".into(),
+            sfx_volume: 0.8,
+            show_shortcuts: false,
+            shortcuts: ["wifi", "bluetooth", "sound", "battery", "displays", "notifications"]
+                .map(String::from)
+                .to_vec(),
         }
     }
 }
 
 impl Settings {
+    pub fn durations(&self) -> crate::pomodoro::Durations {
+        let min = |m: u32| u64::from(m) * 60_000;
+        crate::pomodoro::Durations {
+            focus: min(self.focus_min),
+            short: min(self.short_break_min),
+            long: min(self.long_break_min),
+            long_every: self.long_every,
+        }
+    }
+
     fn sanitized(mut self) -> Self {
         self.opacity = self.opacity.clamp(0.6, 1.0);
         self.hover_delay_ms = self.hover_delay_ms.min(1000);
+        self.hover_exit_delay_ms = self.hover_exit_delay_ms.min(3000);
         if self.display.is_empty() {
             self.display = "auto".into();
         }
+        self.calendar_lead_min = self.calendar_lead_min.min(60);
+        self.focus_min = self.focus_min.clamp(1, 1440);
+        self.short_break_min = self.short_break_min.clamp(1, 1440);
+        self.long_break_min = self.long_break_min.clamp(1, 1440);
+        self.long_every = self.long_every.clamp(2, 10);
+        self.sfx_volume = self.sfx_volume.clamp(0.1, 1.0);
+        if self.sfx.is_empty() || !self.sfx.chars().all(|c| c.is_ascii_alphanumeric()) {
+            self.sfx = "Glass".into();
+        }
+        self.shortcuts.retain(|id| !id.is_empty() && id.len() <= 32);
+        let mut seen = std::collections::HashSet::new();
+        self.shortcuts.retain(|id| seen.insert(id.clone()));
+        self.shortcuts.truncate(MAX_SHORTCUTS);
         self
     }
 }

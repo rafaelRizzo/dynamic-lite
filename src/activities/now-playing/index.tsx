@@ -2,7 +2,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useArtworkColor } from "../../hooks/useArtworkColor";
 import { native, type Settings } from "../../lib/native";
-import type { Activity } from "../types";
+import { MusicIcon } from "../../panels/icons";
+import type { Activity, Panel } from "../types";
 import { Equalizer } from "./Equalizer";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, RepeatOneIcon, ShuffleIcon } from "./Icons";
 import { Progress } from "./Progress";
@@ -35,15 +36,14 @@ function Artwork({ url, size, radius }: { url: string; size: number; radius: num
   );
 }
 
-function Compact({ np, side, height, color }: { np: NowPlayingControls; side: number; height: number; color: string }) {
-  const { state } = np.playback;
+function CompactArt({ np, height }: { np: NowPlayingControls; height: number }) {
   const art = Math.max(16, height - 12);
-  return (
-    <div className="np-compact" style={{ paddingInline: (side - art) / 2 }}>
-      <Artwork url={state.track!.artworkUrl} size={art} radius={6} />
-      <Equalizer playing={state.status === "playing"} color={color} height={Math.round(art * 0.6)} />
-    </div>
-  );
+  return <Artwork url={np.playback.state.track!.artworkUrl} size={art} radius={6} />;
+}
+
+function CompactEqualizer({ np, height, color }: { np: NowPlayingControls; height: number; color: string }) {
+  const art = Math.max(16, height - 12);
+  return <Equalizer playing={np.playback.state.status === "playing"} color={color} height={Math.round(art * 0.6)} />;
 }
 
 type ButtonProps = {
@@ -161,8 +161,8 @@ function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedPr
   );
 }
 
-/** Now Playing do Spotify como Activity: live tocando, disponível no hover quando pausado. */
-export function useNowPlayingActivity(settings: Settings): Activity | null {
+/** Now Playing do Spotify: Activity no Compact enquanto toca, aba no Expanded também quando pausado. */
+export function useNowPlayingFeature(settings: Settings): { activity: Activity | null; panel: Panel | null } {
   const np = useNowPlaying();
   const [volumeOpen, setVolumeOpen] = useState(false);
   const { state } = np.playback;
@@ -174,11 +174,22 @@ export function useNowPlayingActivity(settings: Settings): Activity | null {
       : settings.accent === "white"
         ? "rgb(255 255 255)"
         : palette.accent;
-  if (!state.track || (state.status !== "playing" && state.status !== "paused")) return null;
-  return {
+  if (!state.track || (state.status !== "playing" && state.status !== "paused")) return { activity: null, panel: null };
+  const activity: Activity | null =
+    state.status === "playing"
+      ? {
+          id: "now-playing",
+          compact: ({ height }) => ({
+            left: <CompactArt np={np} height={height} />,
+            right: <CompactEqualizer np={np} height={height} color={color} />,
+          }),
+          theme: palette.theme,
+        }
+      : null;
+  const panel: Panel = {
     id: "now-playing",
-    live: state.status === "playing",
-    compact: ({ side, height }) => <Compact np={np} side={side} height={height} color={color} />,
+    label: "Música",
+    icon: <MusicIcon />,
     expanded: ({ topInset }) => (
       <Expanded np={np} topInset={topInset} color={color} volumeOpen={volumeOpen} setVolumeOpen={setVolumeOpen} />
     ),
@@ -186,4 +197,5 @@ export function useNowPlayingActivity(settings: Settings): Activity | null {
     expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY + (volumeOpen ? VOLUME_PANEL : 0) },
     theme: palette.theme,
   };
+  return { activity, panel };
 }

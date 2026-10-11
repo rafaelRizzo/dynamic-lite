@@ -32,7 +32,7 @@ A Island esticada para os lados do Notch, mostrando um resumo da Activity; preta
 _Avoid_: Minimal, collapsed
 
 **Expanded**:
-A Island aberta para baixo com a Activity completa e seus controles.
+A Island aberta para baixo com o Panel ativo e, embaixo, a barra de abas.
 _Avoid_: Open, full, large
 
 ### Aparência
@@ -62,8 +62,40 @@ _Avoid_: Preferences pane, config screen
 ### Conteúdo
 
 **Activity**:
-Algo em andamento que a Island pode mostrar (na v1, só Now Playing).
+Algo em andamento que aparece no Compact (música tocando, Pomodoro rodando, atualização disponível). Existir já significa estar viva.
 _Avoid_: Widget, module, plugin
+
+**Slot**:
+Um dos dois lados do Notch no Compact. Cada Slot mostra a primeira Activity, por prioridade, que o preenche.
+_Avoid_: Side, column
+
+**Panel**:
+Uma aba do Expanded: Música, Agenda, Pomodoro, Claude Code, Atalhos, Atualização. Todas as abas têm o tamanho da maior, pra barra de abas não pular ao trocar.
+_Avoid_: Tab content, page, screen
+
+**Alert**:
+Aviso que abre a Island sozinha por alguns segundos, com som: fim de fase do Pomodoro, Lembrete ou evento prestes a começar. Fica aberto enquanto o mouse estiver nela.
+_Avoid_: Notification, toast
+
+**Pomodoro**:
+Ciclo de Foco, Pausa curta e Pausa longa (a cada N focos), cada fase de 1 minuto a 24 horas. O tempo mora no Rust.
+_Avoid_: Timer, countdown
+
+**Reminder**:
+Texto com hora que o app guarda e avisa na hora marcada. Concluir apaga.
+_Avoid_: Task, todo, event
+
+**Event**:
+Compromisso lido do app Calendário do macOS; o Dynamic Lite só lê.
+_Avoid_: Appointment, meeting
+
+**Claude Usage**:
+Custo e tokens do Claude Code hoje e na Sessão de 5h em andamento, estimados dos transcritos locais.
+_Avoid_: Billing, quota
+
+**Shortcut**:
+Botão que abre um painel dos Ajustes do Sistema; o usuário escolhe quais aparecem.
+_Avoid_: Quick action, link
 
 **Now Playing**:
 A Activity da faixa atual do Spotify: faixa, artista, capa, posição e controles.

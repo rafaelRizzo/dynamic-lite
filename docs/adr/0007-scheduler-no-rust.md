@@ -1,0 +1,3 @@
+# Pomodoro e lembretes agendados no Rust
+
+O Pomodoro (fase e `ends_at` em epoch ms) e os Lembretes vivem no Rust, em `scheduler.json` na pasta de config, com uma thread que dorme até o próximo vencimento (teto de 5s, porque o relógio monotônico pára com o Mac dormindo). O frontend só mostra `ends_at - agora` e manda comandos. Timers em JS perderiam o estado num reload do webview, driftariam em background e não sobreviveriam a reiniciar o app. O SFX usa `afplay` com os sons de `/System/Library/Sounds`, sem dependência de áudio. Eventos do Calendário entram no mesmo loop (consulta a cada 30s) pra avisar `calendar_lead_min` antes.

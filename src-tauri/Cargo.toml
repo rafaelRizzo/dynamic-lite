@@ -32,6 +32,7 @@ objc2-core-foundation = "0.3"
 block2 = "0.6"
 objc2-core-audio = "0.3"
 objc2-core-audio-types = "0.3"
+objc2-event-kit = { version = "0.3", default-features = false, features = ["std", "EKEventStore", "EKEvent", "EKCalendar", "EKCalendarItem", "EKObject", "EKTypes", "EKSource", "block2"] }
 
 [profile.release]
 codegen-units = 1
