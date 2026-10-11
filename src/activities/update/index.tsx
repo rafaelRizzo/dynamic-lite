@@ -41,7 +41,7 @@ function Expanded({ info, topInset, installing, error, onInstall, onLater }: Exp
         <div className="up-meta">
           <div className="up-title">Atualização disponível</div>
           <div className="up-subtitle" data-error={!!error}>
-            {error ? `Falhou: ${error}` : `Versão ${info.version} · você tem ${info.currentVersion}`}
+            {error ? `Falhou: ${error}` : `Versão atual ${info.currentVersion} · recente ${info.version}`}
           </div>
         </div>
       </div>

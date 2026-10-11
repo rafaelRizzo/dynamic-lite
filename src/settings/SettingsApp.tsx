@@ -60,7 +60,7 @@ function UpdatesSection({ update, autoUpdate, onAutoUpdate }: UpdatesSectionProp
       : installing
         ? "Instalando, o app vai reabrir…"
         : info
-          ? `Versão ${info.version} disponível (você tem ${info.currentVersion})`
+          ? `Versão recente ${info.version} disponível (atual: ${info.currentVersion})`
           : checked
             ? "Você está na versão mais recente"
             : undefined;
