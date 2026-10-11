@@ -224,7 +224,7 @@ export const native = {
   /** 3 dedos no trackpad com o mouse na Island: 1 avança, -1 volta */
   onSwipe: on<number>("island://swipe"),
   onSpotify: on<PlayerState>("spotify://state"),
-  /** Equalizer ao vivo: 4 bandas 0-1 (grave → agudo), ~30fps enquanto toca. Não chega sem permissão/macOS < 14.2. */
+  /** Equalizer ao vivo: 4 bandas 0-1 (grave → agudo), ~20fps enquanto toca. Não chega sem permissão/macOS < 14.2. */
   onLevels: on<number[]>("spotify://levels"),
   onSettings: on<Settings>("settings://changed"),
   onPomodoro: on<PomodoroState>("pomodoro://state"),

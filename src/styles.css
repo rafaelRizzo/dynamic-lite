@@ -1019,6 +1019,7 @@ body,
   animation: eq ease-in-out infinite alternate;
   animation-play-state: paused;
   transition: transform 0.3s;
+  will-change: transform;
 }
 .eq[data-playing="true"] span {
   animation-play-state: running;
@@ -1026,10 +1027,10 @@ body,
 .eq[data-playing="false"] span {
   animation: none;
 }
-/* níveis ao vivo do áudio: o transform vem do JS a ~30fps, a transição suaviza entre quadros */
+/* níveis ao vivo do áudio: o transform vem do JS a ~20fps, a transição suaviza entre quadros */
 .eq[data-live] span {
   animation: none;
-  transition: transform 50ms linear;
+  transition: transform 80ms linear;
 }
 
 @keyframes eq {

@@ -39,8 +39,10 @@ use tauri::{AppHandle, Emitter};
 pub const LEVELS_EVENT: &str = "spotify://levels";
 /// Inclui os helpers do Spotify (`com.spotify.client.helper...`).
 const BUNDLE_PREFIX: &str = "com.spotify.client";
-/// ~30fps; o CSS interpola entre os quadros.
-const FRAME: Duration = Duration::from_millis(33);
+/// ~20fps; o CSS interpola entre os quadros.
+const FRAME: Duration = Duration::from_millis(50);
+/// Variação mínima (0-1) em alguma barra pra valer um novo evento; abaixo disso o olho não vê.
+const MIN_DELTA: f32 = 0.015;
 /// Tocando sem tap (Spotify ainda sem processo de áudio, device ocupado): tenta de novo.
 const RETRY: Duration = Duration::from_secs(5);
 
@@ -406,11 +408,16 @@ impl Drop for Tap {
 
 fn spawn_emitter(app: AppHandle, levels: Arc<Levels>, alive: Arc<AtomicBool>) {
     thread::spawn(move || {
+        let mut sent = [f32::NAN; 4];
         while alive.load(Ordering::Relaxed) {
             thread::sleep(FRAME);
             if alive.load(Ordering::Relaxed) && levels.heard.load(Ordering::Relaxed) {
                 let bands = levels.bands.each_ref().map(|b| f32::from_bits(b.load(Ordering::Relaxed)));
-                let _ = app.emit(LEVELS_EVENT, bands);
+                // NaN inicial: o primeiro quadro sempre sai
+                if bands.iter().zip(&sent).any(|(b, s)| !((b - s).abs() < MIN_DELTA)) {
+                    sent = bands;
+                    let _ = app.emit(LEVELS_EVENT, bands);
+                }
             }
         }
     });

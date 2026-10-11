@@ -93,6 +93,19 @@ O app procura versão nova ao abrir, uma vez por dia e sempre que você abre os 
 
 A instalação baixa, substitui o app e reabre sozinha.
 
+## Desempenho
+
+Medido num Mac Apple Silicon, macOS 26, build de release, Spotify tocando com a Island compacta e o equalizer animado (o pior caso: parado, a Island fica invisível).
+
+| Métrica | Valor |
+|---|---|
+| Download (`.dmg` universal) | ~7,4 MB |
+| Em disco (`.app`) | ~17 MB |
+| Memória | ~155 MB no total: ~54 MB do app + ~120 MB dos processos do WebKit do macOS (WebContent, GPU, Rede) |
+| CPU | ~14% de um núcleo em média (pico ~15%), somando app e WebKit |
+
+A memória e a CPU incluem os processos do WebKit porque o Tauri usa a webview do sistema em vez de embutir um Chromium. Por isso o app é leve em disco, mas a UI roda em processos separados.
+
 ## Gerar o app você mesmo
 
 Requisitos:

@@ -10,7 +10,7 @@ const MIN_SCALE = 0.2;
 export function Equalizer({ playing, color, height = 14 }: { playing: boolean; color: string; height?: number }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  // níveis ao vivo direto no DOM: ~30 eventos/s sem re-render
+  // níveis ao vivo direto no DOM: ~20 eventos/s sem re-render
   useEffect(() => {
     const el = ref.current;
     if (!el || !playing) return;
