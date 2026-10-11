@@ -2,6 +2,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::ptr::NonNull;
+use std::rc::Rc;
 
 use block2::RcBlock;
 use objc2::rc::Retained;
@@ -10,7 +11,7 @@ use objc2::MainThreadMarker;
 use objc2_app_kit::{
     NSAccessibility, NSAccessibilityFloatingWindowSubrole, NSAnimatablePropertyContainer,
     NSAnimationContext, NSApplication,
-    NSApplicationDidChangeScreenParametersNotification, NSColor, NSEvent, NSGlassEffectView,
+    NSApplicationDidChangeScreenParametersNotification, NSColor, NSEvent, NSEventMask, NSGlassEffectView,
     NSGlassEffectViewStyle, NSHapticFeedbackManager, NSHapticFeedbackPattern,
     NSHapticFeedbackPerformanceTime, NSHapticFeedbackPerformer, NSMainMenuWindowLevel,
     NSRunningApplication, NSScreen, NSWindow, NSWindowCollectionBehavior, NSWindowOrderingMode,
@@ -158,6 +159,27 @@ pub fn on_spotify_change(handler: impl Fn() + 'static) {
     let center = NSDistributedNotificationCenter::defaultCenter();
     let name = NSString::from_str("com.spotify.client.PlaybackStateChanged");
     observe(&center, &name, handler);
+}
+
+/// Deslizar com 3 dedos no trackpad (evento de swipe do macOS). `dx` > 0: dedos pra esquerda, < 0: pra direita.
+/// Dois monitores porque o evento vai pro nosso app quando o mouse está sobre a Island (a janela aceita mouse) e
+/// pro app de trás quando não está; os dois valem, quem filtra por posição é o chamador.
+pub fn on_swipe(handler: impl Fn(f64) + 'static) {
+    let handler = Rc::new(handler);
+
+    let h = handler.clone();
+    let global = RcBlock::new(move |event: NonNull<NSEvent>| h(unsafe { event.as_ref() }.deltaX()));
+    let token = NSEvent::addGlobalMonitorForEventsMatchingMask_handler(NSEventMask::Swipe, &global);
+
+    let local = RcBlock::new(move |event: NonNull<NSEvent>| -> *mut NSEvent {
+        handler(unsafe { event.as_ref() }.deltaX());
+        event.as_ptr()
+    });
+    // SAFETY: o bloco devolve o mesmo evento, um ponteiro válido
+    let local_token = unsafe { NSEvent::addLocalMonitorForEventsMatchingMask_handler(NSEventMask::Swipe, &local) };
+
+    // os monitores vivem até o app fechar: nada de remover, e os tokens não podem ser soltos
+    std::mem::forget((global, token, local, local_token));
 }
 
 #[allow(deprecated)] // `activate()` só existe no macOS 14+

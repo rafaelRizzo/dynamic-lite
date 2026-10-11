@@ -226,3 +226,49 @@
   border-color: transparent;
   color: #fff;
 }
+
+/* chips de seleção múltipla */
+.st-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 12px;
+  border-top: 0.5px solid var(--line);
+}
+.st-chip {
+  all: unset;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: var(--control);
+  transition: background 0.15s, color 0.15s;
+}
+.st-chip[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+.st-chip:disabled {
+  opacity: 0.4;
+}
+
+.st-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.st-input {
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 0.5px solid var(--line);
+  background: var(--control);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.st-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}

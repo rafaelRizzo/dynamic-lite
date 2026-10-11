@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 /// Tamanho fixo da janela: cabe a Island Expanded; a forma anima dentro dela (ADR 0003).
-pub const WINDOW_SIZE: (f64, f64) = (500.0, 260.0);
+pub const WINDOW_SIZE: (f64, f64) = (500.0, 340.0);
 
 /// Folga ao redor da Hit Region pra o hover não "piscar" na borda.
 const HIT_PADDING: f64 = 6.0;

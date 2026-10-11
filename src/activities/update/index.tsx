@@ -2,7 +2,8 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../../hooks/useUpdate";
 import type { UpdateInfo } from "../../lib/native";
-import type { Activity } from "../types";
+import { UpdateTabIcon } from "../../panels/icons";
+import type { Activity, Panel } from "../types";
 
 const EXPANDED = { width: 340, height: 104 };
 
@@ -12,15 +13,12 @@ const UpdateIcon = ({ size }: { size: number }) => (
   </svg>
 );
 
-function Compact({ info, side, height }: { info: UpdateInfo; side: number; height: number }) {
+function CompactBadge({ height }: { height: number }) {
   const badge = Math.max(16, height - 14);
   return (
-    <div className="up-compact" style={{ paddingInline: (side - badge) / 2 }}>
-      <span className="up-badge" style={{ width: badge, height: badge }}>
-        <UpdateIcon size={badge * 0.7} />
-      </span>
-      <span className="up-compact-version">{info.version}</span>
-    </div>
+    <span className="up-badge" style={{ width: badge, height: badge }}>
+      <UpdateIcon size={badge * 0.7} />
+    </span>
   );
 }
 
@@ -59,28 +57,37 @@ function Expanded({ info, topInset, installing, error, onInstall, onLater }: Exp
   );
 }
 
-/** Atualização como Activity: aparece quando não há música tocando (Now Playing tem prioridade). */
-export function useUpdateActivity(): Activity | null {
+/** Atualização: Activity no Compact (preenche o lado que sobrar) e aba enquanto não for dispensada. */
+export function useUpdateFeature(): { activity: Activity | null; panel: Panel | null } {
   const { info, installing, error, install } = useUpdate();
   // "Depois" esconde até a próxima checagem: cada checagem traz um objeto novo e reexibe
   const [dismissed, setDismissed] = useState<UpdateInfo | null>(null);
   useEffect(() => setDismissed(null), [info]);
 
-  if (!info || dismissed === info) return null;
+  if (!info || dismissed === info) return { activity: null, panel: null };
   return {
-    id: "update",
-    live: true,
-    compact: ({ side, height }) => <Compact info={info} side={side} height={height} />,
-    expanded: ({ topInset }) => (
-      <Expanded
-        info={info}
-        topInset={topInset}
-        installing={installing}
-        error={error}
-        onInstall={install}
-        onLater={() => setDismissed(info)}
-      />
-    ),
-    expandedSize: EXPANDED,
+    activity: {
+      id: "update",
+      compact: ({ height }) => ({
+        left: <CompactBadge height={height} />,
+        right: <span className="up-compact-version">{info.version}</span>,
+      }),
+    },
+    panel: {
+      id: "update",
+      label: "Atualização",
+      icon: <UpdateTabIcon />,
+      expanded: ({ topInset }) => (
+        <Expanded
+          info={info}
+          topInset={topInset}
+          installing={installing}
+          error={error}
+          onInstall={install}
+          onLater={() => setDismissed(info)}
+        />
+      ),
+      expandedSize: EXPANDED,
+    },
   };
 }

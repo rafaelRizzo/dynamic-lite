@@ -3,9 +3,18 @@ import { useEffect, useState } from "react";
 import { usePlatform, useSettings } from "../hooks/useSettings";
 import { useUpdate } from "../hooks/useUpdate";
 import { native } from "../lib/native";
-import { Note, Range, Row, Section, Segmented, Toggle } from "./controls";
+import { SHORTCUTS } from "../panels/shortcuts/catalog";
+import { Chips, DurationField, Note, Range, Row, Section, Segmented, Toggle } from "./controls";
 import icon from "../assets/icon.png";
 import "./settings.css";
+
+function useSounds() {
+  const [sounds, setSounds] = useState<string[]>([]);
+  useEffect(() => {
+    native.listSounds().then(setSounds);
+  }, []);
+  return sounds;
+}
 
 function useDisplays() {
   const [displays, setDisplays] = useState<string[]>([]);
@@ -80,6 +89,7 @@ export function SettingsApp() {
   const { settings, update } = useSettings();
   const platform = usePlatform();
   const displays = useDisplays();
+  const sounds = useSounds();
   const [autostart, setAutostart] = useState<boolean | null>(null);
   const [version, setVersion] = useState("");
   const appUpdate = useUpdate();
@@ -190,9 +200,118 @@ export function SettingsApp() {
             />
           </Row>
         )}
+        <Row label="Gesto de 3 dedos" hint="Com a Island aberta e o mouse nela, deslize 3 dedos pro lado pra trocar de aba">
+          <Toggle checked={settings.swipeTabs} onChange={(swipeTabs) => update({ swipeTabs })} />
+        </Row>
+        {settings.swipeTabs && (
+          <Row label="Inverter a direção do gesto">
+            <Toggle checked={settings.invertSwipe} onChange={(invertSwipe) => update({ invertSwipe })} />
+          </Row>
+        )}
+        <Row label="Atraso pra fechar" hint="Quanto a Island espera depois que o mouse sai. Voltar nesse tempo cancela">
+          <Range
+            value={settings.hoverExitDelayMs}
+            min={0}
+            max={2000}
+            step={50}
+            format={(v) => `${v} ms`}
+            onChange={(hoverExitDelayMs) => update({ hoverExitDelayMs })}
+          />
+        </Row>
         <Row label="Toque no trackpad" hint="Um clique leve sentido no dedo quando a Island abre ou fecha">
           <Toggle checked={settings.haptics} onChange={(haptics) => update({ haptics })} />
         </Row>
+      </Section>
+
+      <Section title="Claude Code">
+        <Row label="Aba de uso do Claude Code" hint="Custo de hoje, sessão de 5h e limite semanal do plano. Desligada, nada é lido">
+          <Toggle checked={settings.showClaudeUsage} onChange={(showClaudeUsage) => update({ showClaudeUsage })} />
+        </Row>
+        {settings.showClaudeUsage && (
+          <>
+            <Row
+              label="Consultar o limite na conta"
+              hint="Usa o token do Claude Code no Keychain e pergunta à Anthropic (api.anthropic.com), como o /usage. O token só fica na memória"
+            >
+              <Toggle checked={settings.claudeLiveLimits} onChange={(claudeLiveLimits) => update({ claudeLiveLimits })} />
+            </Row>
+            <Note>
+              {settings.claudeLiveLimits
+                ? "Se a consulta falhar, o app lê o arquivo ~/.claude/dynano-usage.json do statusline."
+                : "Sem a consulta, o limite vem do statusline: grave o JSON recebido em ~/.claude/dynano-usage.json (cat > ~/.claude/dynano-usage.json). Só atualiza com o Claude Code no terminal."}
+            </Note>
+          </>
+        )}
+      </Section>
+
+      <Section title="Agenda">
+        <Row label="Aba da agenda" hint="Eventos do app Calendário e lembretes com hora">
+          <Toggle checked={settings.showAgenda} onChange={(showAgenda) => update({ showAgenda })} />
+        </Row>
+        {settings.showAgenda && (
+          <Row label="Avisar antes de um evento" hint="A Island abre sozinha e toca o som">
+            <Segmented
+              value={String(settings.calendarLeadMin)}
+              onChange={(v) => update({ calendarLeadMin: Number(v) })}
+              options={[
+                { value: "0", label: "Nunca" },
+                { value: "5", label: "5 min" },
+                { value: "10", label: "10 min" },
+                { value: "15", label: "15 min" },
+                { value: "30", label: "30 min" },
+              ]}
+            />
+          </Row>
+        )}
+      </Section>
+
+      <Section title="Pomodoro">
+        <Row label="Aba do Pomodoro" hint="Com o timer rodando, o tempo aparece na Island fechada">
+          <Toggle checked={settings.showPomodoro} onChange={(showPomodoro) => update({ showPomodoro })} />
+        </Row>
+        <Row label="Foco" hint="De 1 minuto a 24 horas: 25, 90m, 1h30">
+          <DurationField value={settings.focusMin} onChange={(focusMin) => update({ focusMin })} />
+        </Row>
+        <Row label="Pausa curta">
+          <DurationField value={settings.shortBreakMin} onChange={(shortBreakMin) => update({ shortBreakMin })} />
+        </Row>
+        <Row label="Pausa longa">
+          <DurationField value={settings.longBreakMin} onChange={(longBreakMin) => update({ longBreakMin })} />
+        </Row>
+        <Row label="Pausa longa a cada">
+          <Range value={settings.longEvery} min={2} max={8} step={1} format={(v) => `${v} focos`} onChange={(longEvery) => update({ longEvery })} />
+        </Row>
+        <Row label="Iniciar a próxima fase sozinho" hint="Sem isso, o aviso oferece iniciar">
+          <Toggle checked={settings.autoStartNext} onChange={(autoStartNext) => update({ autoStartNext })} />
+        </Row>
+        <Row label="Som ao terminar" hint="Também toca nos lembretes">
+          <div className="st-inline">
+            <select className="st-select" value={settings.sfx} onChange={(e) => update({ sfx: e.target.value })}>
+              {!sounds.includes(settings.sfx) && <option value={settings.sfx}>{settings.sfx}</option>}
+              {sounds.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+            <button className="st-button" onClick={() => native.playSound(settings.sfx, settings.sfxVolume)}>Testar</button>
+          </div>
+        </Row>
+        <Row label="Volume do som">
+          <Range value={Math.round(settings.sfxVolume * 100)} min={10} max={100} step={5} format={(v) => `${v}%`} onChange={(v) => update({ sfxVolume: v / 100 })} />
+        </Row>
+      </Section>
+
+      <Section title="Atalhos">
+        <Row label="Aba de atalhos" hint="Abre painéis dos Ajustes do Sistema">
+          <Toggle checked={settings.showShortcuts} onChange={(showShortcuts) => update({ showShortcuts })} />
+        </Row>
+        {settings.showShortcuts && (
+          <Chips
+            options={SHORTCUTS.map((s) => ({ value: s.id, label: s.label }))}
+            selected={settings.shortcuts}
+            max={12}
+            onChange={(shortcuts) => update({ shortcuts })}
+          />
+        )}
       </Section>
 
       <Section title="Tela">

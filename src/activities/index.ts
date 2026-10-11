@@ -1,11 +1,25 @@
 import type { Settings } from "../lib/native";
-import { useNowPlayingActivity } from "./now-playing";
-import { useUpdateActivity } from "./update";
-import type { Activity } from "./types";
+import { useAgendaPanel } from "../panels/agenda";
+import { useClaudePanel } from "../panels/claude";
+import { usePomodoroFeature } from "../panels/pomodoro";
+import { useShortcutsPanel } from "../panels/shortcuts";
+import { useNowPlayingFeature } from "./now-playing";
+import { useUpdateFeature } from "./update";
+import type { Activity, Panel } from "./types";
 
-/** Activities ativas por prioridade; a Island mostra a primeira. Nova Activity = novo hook aqui. */
-export function useActivities(settings: Settings): Activity[] {
-  const nowPlaying = useNowPlayingActivity(settings);
-  const update = useUpdateActivity();
-  return [nowPlaying, update].filter((a): a is Activity => a !== null);
+/**
+ * Tudo que a Island pode mostrar. `activities` (Compact) por prioridade: cada lado do Notch fica com a primeira
+ * que o preenche. `panels` (abas do Expanded) na ordem da barra. Nova feature = novo hook aqui.
+ */
+export function useIslandContent(settings: Settings, updateSettings: (patch: Partial<Settings>) => void): { activities: Activity[]; panels: Panel[] } {
+  const nowPlaying = useNowPlayingFeature(settings);
+  const update = useUpdateFeature();
+  const pomodoro = usePomodoroFeature(settings, updateSettings);
+  const agenda = useAgendaPanel(settings);
+  const claude = useClaudePanel(settings);
+  const shortcuts = useShortcutsPanel(settings);
+  return {
+    activities: [pomodoro.activity, nowPlaying.activity, update.activity].filter((a): a is Activity => a !== null),
+    panels: [nowPlaying.panel, agenda, pomodoro.panel, claude, shortcuts, update.panel].filter((p): p is Panel => p !== null),
+  };
 }
