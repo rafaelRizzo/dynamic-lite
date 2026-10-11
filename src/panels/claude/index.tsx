@@ -142,7 +142,7 @@ function Expanded({ topInset }: { topInset: number }) {
           <div className="cc-foot" data-stale={stale} data-tip={footTitle(usage)}>
             {limits
               ? limits.live
-                ? "Limite ao vivo, direto da conta"
+                ? "Limite em tempo real"
                 : `Limite atualizado ${ago(now - limits.updatedAt)}`
               : "Valores estimados pelos transcritos locais"}
           </div>
