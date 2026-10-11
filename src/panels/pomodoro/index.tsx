@@ -81,7 +81,7 @@ function ClockEditor({ minutes, onCommit }: { minutes: number; onCommit: (m: num
   const label = formatClock(minutes * 60_000);
   if (text === null) {
     return (
-      <button className="pm-clock pm-clock-btn" onClick={() => setText(String(minutes))} title="Escolher o tempo" style={label.length > 5 ? { fontSize: 17 } : undefined}>
+      <button className="pm-clock pm-clock-btn" onClick={() => setText(String(minutes))} data-tip="Escolher o tempo" style={label.length > 5 ? { fontSize: 17 } : undefined}>
         {label}
       </button>
     );
@@ -157,14 +157,14 @@ function Expanded({ state, settings, update, topInset, controls }: ExpandedProps
   const next = nextPhase(state, settings.longEvery);
   return (
     <div className="pm-expanded" style={{ paddingTop: topInset }}>
-      <div className="pm-ring-wrap" onWheel={idle ? (e) => adjust(e.deltaY < 0 ? 1 : -1) : undefined} title={idle ? "Role pra ajustar o tempo" : undefined}>
+      <div className="pm-ring-wrap" onWheel={idle ? (e) => adjust(e.deltaY < 0 ? 1 : -1) : undefined} data-tip={idle ? "Role pra ajustar o tempo" : undefined}>
         <Ring state={state} settings={settings} />
         <div className="pm-center">
           {idle ? <ClockEditor minutes={minutes} onCommit={setMinutes} /> : <Clock state={state} settings={settings} className="pm-clock" />}
           {idle ? (
             <span className="pm-steps">
-              <button className="pm-step" {...holdMinus} onKeyDown={keyStep(-1)} disabled={minutes <= 1} title="Menos (segure pra repetir)">−</button>
-              <button className="pm-step" {...holdPlus} onKeyDown={keyStep(1)} disabled={minutes >= 1440} title="Mais (segure pra repetir)">+</button>
+              <button className="pm-step" {...holdMinus} onKeyDown={keyStep(-1)} disabled={minutes <= 1} data-tip="Menos (segure pra repetir)" aria-label="Menos">−</button>
+              <button className="pm-step" {...holdPlus} onKeyDown={keyStep(1)} disabled={minutes >= 1440} data-tip="Mais (segure pra repetir)" aria-label="Mais">+</button>
             </span>
           ) : (
             <span className="pm-caption">{running ? "restante" : "pausado"}</span>
@@ -177,7 +177,7 @@ function Expanded({ state, settings, update, topInset, controls }: ExpandedProps
             <i style={{ background: phaseColor(state) }} />
             {PHASE_LABEL[state.phase]}
           </span>
-          <span className="pm-dots" data-dense={settings.longEvery > 5} title="Fases do ciclo: foco, pausa, foco, pausa... e a pausa longa no fim">
+          <span className="pm-dots" data-dense={settings.longEvery > 5} data-tip="Fases do ciclo: foco, pausa, foco, pausa... e a pausa longa no fim">
             {Array.from({ length: settings.longEvery * 2 }, (_, i) => {
               const current = cycleIndex(state, settings.longEvery);
               return (
@@ -208,7 +208,7 @@ function Expanded({ state, settings, update, topInset, controls }: ExpandedProps
           )}
         </div>
         <div className="pm-controls">
-          <motion.button className="pm-btn pm-btn-primary" onClick={controls.toggle} whileTap={{ scale: 0.92 }} title={running ? "Pausar" : state.status === "paused" ? "Continuar" : "Iniciar"}>
+          <motion.button className="pm-btn pm-btn-primary" onClick={controls.toggle} whileTap={{ scale: 0.92 }} data-tip={running ? "Pausar" : state.status === "paused" ? "Continuar" : "Iniciar"}>
             <AnimatePresence initial={false} mode="popLayout">
               <motion.span
                 key={running ? "pause" : "play"}
@@ -222,10 +222,10 @@ function Expanded({ state, settings, update, topInset, controls }: ExpandedProps
               </motion.span>
             </AnimatePresence>
           </motion.button>
-          <motion.button className="pm-btn" onClick={controls.skip} whileTap={{ scale: 0.92 }} title="Pular fase">
+          <motion.button className="pm-btn" onClick={controls.skip} whileTap={{ scale: 0.92 }} data-tip="Pular fase">
             <NextIcon size={16} />
           </motion.button>
-          <motion.button className="pm-btn" onClick={controls.reset} disabled={idle && state.cycle === 0 && state.phase === "focus"} whileTap={{ scale: 0.92 }} title="Zerar">
+          <motion.button className="pm-btn" onClick={controls.reset} disabled={idle && state.cycle === 0 && state.phase === "focus"} whileTap={{ scale: 0.92 }} data-tip="Zerar">
             <ResetIcon />
           </motion.button>
         </div>

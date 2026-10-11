@@ -1,6 +1,7 @@
 import { useIslandContent } from "./activities";
 import { useAlertPanel } from "./activities/alert";
 import { Island } from "./components/Island";
+import { TipLayer } from "./components/TipLayer";
 import { useIslandHover } from "./hooks/useIslandHover";
 import { useNotch } from "./hooks/useNotch";
 import { usePlatform, useSettings } from "./hooks/useSettings";
@@ -14,7 +15,10 @@ function Surface({ notch, settings, update, platform }: SurfaceProps) {
   const { activities, panels } = useIslandContent(settings, update);
   const alert = useAlertPanel(hovered);
   return (
-    <Island notch={notch} activities={activities} panels={panels} forced={alert} hovered={hovered} settings={settings} platform={platform} />
+    <>
+      <Island notch={notch} activities={activities} panels={panels} forced={alert} hovered={hovered} settings={settings} platform={platform} />
+      <TipLayer />
+    </>
   );
 }
 

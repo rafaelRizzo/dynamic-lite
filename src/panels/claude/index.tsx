@@ -46,7 +46,7 @@ function Stat({ title, big, sub, subTitle, children }: StatProps) {
       <div className="cc-title">{title}</div>
       <div className="cc-cost">{big}</div>
       {children}
-      {sub && <div className="cc-sub" title={subTitle}>{sub}</div>}
+      {sub && <div className="cc-sub" data-tip={subTitle}>{sub}</div>}
     </div>
   );
 }
@@ -139,7 +139,7 @@ function Expanded({ topInset }: { topInset: number }) {
               <div className="cc-bar-gap" />
             </Stat>
           </div>
-          <div className="cc-foot" data-stale={stale} title={footTitle(usage)}>
+          <div className="cc-foot" data-stale={stale} data-tip={footTitle(usage)}>
             {limits
               ? limits.live
                 ? "Limite ao vivo, direto da conta"
