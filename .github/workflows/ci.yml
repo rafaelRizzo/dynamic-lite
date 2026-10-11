@@ -3,6 +3,9 @@ name: CI
 on:
   pull_request:
     branches: [main]
+  # popula o cache do Rust na main: PRs só restauram cache da própria ref ou da main
+  push:
+    branches: [main]
 
 # actions fixadas por SHA (tag no comentário); o Dependabot mantém atualizadas
 permissions:
