@@ -22,6 +22,7 @@ fi
 
 feats=() fixes=() others=() breaking=()
 while IFS=$'\x1f' read -r subject body; do
+  subject="${subject#"${subject%%[![:space:]]*}"}" # o \n entre commits do git log vira espaço no começo do próximo
   [[ -z "$subject" ]] && continue
   if [[ "$subject" =~ ^([a-z]+)(\([^\)]*\))?(!)?:\ (.+)$ ]]; then
     type="${BASH_REMATCH[1]}" bang="${BASH_REMATCH[3]}" desc="${BASH_REMATCH[4]}"
