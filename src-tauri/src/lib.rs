@@ -4,6 +4,7 @@ compile_error!("Dynamic Lite só roda no macOS");
 mod calendar;
 mod claude_usage;
 mod equalizer;
+mod gesture_guard;
 mod layout;
 mod macos;
 mod menu;
@@ -65,6 +66,12 @@ fn get_notch(layout: State<'_, SharedLayout>) -> Notch {
 #[tauri::command]
 fn set_island_size(width: f64, height: f64, layout: State<'_, SharedLayout>) {
     layout.lock().unwrap().island = (width, height);
+}
+
+/// A Island aberta com abas e o gesto de 3 dedos ativo: os gestos do sistema não passam enquanto o mouse está nela.
+#[tauri::command]
+fn set_swipe_capture(on: bool) {
+    gesture_guard::set_capture(on);
 }
 
 #[tauri::command]
@@ -197,6 +204,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_notch,
             set_island_size,
+            set_swipe_capture,
             get_platform,
             list_displays,
             set_glass,
@@ -262,6 +270,16 @@ pub fn run() {
             let raw = swipe.clone();
             if !multitouch::start(move |left| raw(left)) {
                 eprintln!("MultitouchSupport indisponível: só o gesto de swipe do sistema troca de aba");
+            }
+            {
+                let (app, layout) = (app.handle().clone(), layout.clone());
+                gesture_guard::start(
+                    move || app.state::<SharedSettings>().lock().unwrap().swipe_tabs,
+                    move || {
+                        let (x, y) = macos::mouse_location();
+                        layout.lock().unwrap().hit(x, y)
+                    },
+                );
             }
             macos::on_swipe(move |dx| {
                 if dx != 0.0 {

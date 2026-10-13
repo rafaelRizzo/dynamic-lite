@@ -5,4 +5,4 @@ Trocar de aba com 3 dedos lê os toques direto do framework privado MultitouchSu
 - Só conta com exatamente 3 dedos e só age com o mouse sobre a Island (o Rust confere a Hit Region); fora dela o gesto é ignorado.
 - As duas fontes podem disparar o mesmo gesto: um intervalo de 450 ms evita trocar duas abas.
 - É API privada: pode mudar ou sumir numa versão do macOS. Se o framework não carregar, o app segue sem o gesto (e só o swipe do sistema, se existir, funciona).
-- Os gestos do próprio sistema com 3 dedos continuam rodando em paralelo: se algum estiver ligado, vai disparar junto.
+- Os gestos do próprio sistema com 3 dedos (trocar de mesa, Mission Control) rodam em paralelo: por isso, com a Island aberta e o mouse nela, um event tap (`gesture_guard.rs`) descarta os eventos de dock swipe (tipo 30, subtipo 23, o que o Dock recebe) pro sistema não mexer na tela junto. O tap precisa da permissão de Acessibilidade; sem ela o app pede uma vez e o sistema continua reagindo ao gesto. Como o app é assinado ad hoc, a permissão pode precisar ser concedida de novo a cada atualização.

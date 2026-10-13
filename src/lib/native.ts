@@ -178,6 +178,8 @@ const on =
 export const native = {
   getNotch: () => invoke<Notch>("get_notch"),
   setIslandSize: (width: number, height: number) => invoke<void>("set_island_size", { width, height }),
+  /** Island aberta com abas e gesto de 3 dedos ativo: os gestos do sistema não passam com o mouse nela */
+  setSwipeCapture: (on: boolean) => invoke<void>("set_swipe_capture", { on }),
   getPlatform: () => invoke<Platform>("get_platform"),
   listDisplays: () => invoke<string[]>("list_displays"),
   /** `target` null recolhe o vidro de volta pra `rest` (Compact/Idle) e esconde. */
