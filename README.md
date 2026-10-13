@@ -102,9 +102,11 @@ Medido num Mac Apple Silicon, macOS 26, build de release, Spotify tocando com a 
 | Download (`.dmg` universal) | ~7,4 MB |
 | Em disco (`.app`) | ~17 MB |
 | Memória | ~155 MB no total: ~54 MB do app + ~120 MB dos processos do WebKit do macOS (WebContent, GPU, Rede) |
-| CPU | ~14% de um núcleo em média (pico ~15%), somando app e WebKit |
+| CPU | ~3% de um núcleo em média, somando app e WebKit (parado, com a Island invisível: ~0,5%) |
 
 A memória e a CPU incluem os processos do WebKit porque o Tauri usa a webview do sistema em vez de embutir um Chromium. Por isso o app é leve em disco, mas a UI roda em processos separados.
+
+O equalizer é um único `<canvas>` desenhado por JS a 20 quadros por segundo. Barras animadas por CSS, cada uma numa camada própria da webview, custavam ~4x mais CPU (~12%).
 
 ## Gerar o app você mesmo
 

@@ -39,7 +39,7 @@ use tauri::{AppHandle, Emitter};
 pub const LEVELS_EVENT: &str = "spotify://levels";
 /// Inclui os helpers do Spotify (`com.spotify.client.helper...`).
 const BUNDLE_PREFIX: &str = "com.spotify.client";
-/// ~20fps; o CSS interpola entre os quadros.
+/// ~20fps; o canvas suaviza entre os quadros.
 const FRAME: Duration = Duration::from_millis(50);
 /// Variação mínima (0-1) em alguma barra pra valer um novo evento; abaixo disso o olho não vê.
 const MIN_DELTA: f32 = 0.015;

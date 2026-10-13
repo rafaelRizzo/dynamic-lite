@@ -1015,39 +1015,10 @@ body,
 
 /* ---------- Equalizer ---------- */
 
+/* canvas desenhado por JS (Equalizer.tsx): camadas CSS por barra e animação contínua custavam ~4x mais CPU na webview */
 .eq {
-  display: flex;
-  align-items: center;
-  gap: 2px;
+  display: block;
   flex: none;
-}
-.eq span {
-  width: 3px;
-  height: 100%;
-  border-radius: 2px;
-  background: currentColor;
-  transform: scaleY(0.3);
-  animation: eq ease-in-out infinite alternate;
-  animation-play-state: paused;
-  transition: transform 0.3s;
-  will-change: transform;
-}
-.eq[data-playing="true"] span {
-  animation-play-state: running;
-}
-.eq[data-playing="false"] span {
-  animation: none;
-}
-/* níveis ao vivo do áudio: o transform vem do JS a ~20fps, a transição suaviza entre quadros */
-.eq[data-live] span {
-  animation: none;
-  transition: transform 80ms linear;
-}
-
-@keyframes eq {
-  0% { transform: scaleY(0.25); }
-  50% { transform: scaleY(1); }
-  100% { transform: scaleY(0.45); }
 }
 
 /* ---------- Atualização ---------- */
