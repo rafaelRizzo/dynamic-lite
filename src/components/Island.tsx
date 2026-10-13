@@ -152,6 +152,12 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
     [],
   );
 
+  // com a Island aberta o gesto de 3 dedos é só dela: o sistema não troca de mesa junto
+  const captureSwipe = mode === "expanded" && showTabs && settings.swipeTabs;
+  useEffect(() => {
+    native.setSwipeCapture(captureSwipe);
+  }, [captureSwipe]);
+
   // Glass sem suporte nativo cai pra Translucent (ADR 0004)
   const style = settings.style === "glass" && !platform.glassSupported ? "translucent" : settings.style;
   const glassOpen = style === "glass" && mode === "expanded";
