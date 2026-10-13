@@ -55,6 +55,8 @@ pub struct Settings {
     pub swipe_tabs: bool,
     /// inverte a direção do gesto
     pub invert_swipe: bool,
+    /// reabre na última aba usada, inclusive depois de reiniciar o app
+    pub remember_tab: bool,
     pub show_menu_bar_icon: bool,
     /// "auto", "main" ou o nome da tela
     pub display: String,
@@ -99,6 +101,7 @@ impl Default for Settings {
             haptics: true,
             swipe_tabs: true,
             invert_swipe: false,
+            remember_tab: false,
             show_menu_bar_icon: true,
             display: "auto".into(),
             all_spaces: true,

@@ -18,6 +18,25 @@ const PANEL: Variants = {
   exit: (dir: number) => ({ opacity: 0, x: -dir * SLIDE, filter: "blur(4px)", transition: { duration: 0.07 } }),
 };
 
+const TAB_KEY = "island.lastTab";
+
+function loadTab(): string | null {
+  try {
+    return localStorage.getItem(TAB_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveTab(id: string | null) {
+  try {
+    if (id) localStorage.setItem(TAB_KEY, id);
+    else localStorage.removeItem(TAB_KEY);
+  } catch {
+    // sem storage: só não lembra
+  }
+}
+
 const HIDDEN = (notch: Notch): IslandShape => ({ width: notch.width * 0.5, height: 0, radius: 0, ear: 0 });
 
 type Size = { width: number; height: number };
@@ -60,7 +79,7 @@ type IslandProps = {
 
 export function Island({ notch, activities, panels, forced, hovered, settings, platform }: IslandProps) {
   const [clicked, setClicked] = useState(false);
-  const [tab, setTab] = useState<string | null>(null);
+  const [tab, setTab] = useState<string | null>(() => (settings.rememberTab ? loadTab() : null));
   // digitando num campo (tempo do Pomodoro, lembrete) a Island não fecha, mesmo com o mouse fora
   const [typing, setTyping] = useState(false);
   useEffect(() => {
@@ -79,10 +98,15 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
   useEffect(() => {
     if (!present) {
       setClicked(false);
-      // na próxima abertura volta pra primeira aba
-      setTab(null);
+      // na próxima abertura volta pra primeira aba, a menos que lembre a última
+      if (!settings.rememberTab) setTab(null);
     }
-  }, [present]);
+  }, [present, settings.rememberTab]);
+
+  // desligar a opção apaga o que estava salvo
+  useEffect(() => {
+    saveTab(settings.rememberTab ? tab : null);
+  }, [tab, settings.rememberTab]);
 
   const tabs = panels.filter((p) => !p.hidden);
   const panel = forced ?? tabs.find((p) => p.id === tab) ?? tabs[0] ?? null;

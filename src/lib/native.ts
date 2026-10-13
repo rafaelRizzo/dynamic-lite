@@ -45,6 +45,8 @@ export type Settings = {
   /** deslizar com 3 dedos na Island aberta troca de aba */
   swipeTabs: boolean;
   invertSwipe: boolean;
+  /** reabre na última aba usada, inclusive depois de reiniciar o app */
+  rememberTab: boolean;
   showMenuBarIcon: boolean;
   /** "auto", "main" ou o nome da tela */
   display: string;
