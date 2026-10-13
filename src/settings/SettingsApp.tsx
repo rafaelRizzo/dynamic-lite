@@ -208,6 +208,9 @@ export function SettingsApp() {
             <Toggle checked={settings.invertSwipe} onChange={(invertSwipe) => update({ invertSwipe })} />
           </Row>
         )}
+        <Row label="Lembrar a última aba" hint="Reabre na aba em que parou, mesmo depois de reiniciar o app. Desligado, sempre abre na primeira">
+          <Toggle checked={settings.rememberTab} onChange={(rememberTab) => update({ rememberTab })} />
+        </Row>
         <Row label="Atraso pra fechar" hint="Quanto a Island espera depois que o mouse sai. Voltar nesse tempo cancela">
           <Range
             value={settings.hoverExitDelayMs}
