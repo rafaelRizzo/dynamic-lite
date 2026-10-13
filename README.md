@@ -41,6 +41,20 @@ Dynamic Island para macOS: uma forma "líquida" que vive no notch e vira player 
 
 Precisa do Spotify desktop instalado.
 
+## Permissões
+
+O macOS pergunta cada uma na hora em que o recurso é usado. Só a de Automação é necessária pra música; as outras liberam recursos opcionais, e negar uma só desliga o recurso dela.
+
+| Permissão | Pra quê | Obrigatória | Onde ajustar |
+|---|---|---|---|
+| Automação → Spotify | Ler e controlar a música tocando | Sim | Privacidade e Segurança → Automação |
+| Gravação de áudio do sistema (macOS 14.2+) | Equalizer seguir a música; negando, ele anima em loop | Não | Privacidade e Segurança → Gravação de Tela e Áudio do Sistema |
+| Calendários | Aba da agenda e aviso antes dos eventos | Não | Privacidade e Segurança → Calendários |
+| Acessibilidade | Com a Island aberta, o gesto de 3 dedos só troca de aba, sem trocar de mesa nem abrir o Mission Control; negando, o sistema reage ao gesto junto | Não | Privacidade e Segurança → Acessibilidade |
+| Keychain | Ler o token do Claude Code pra consultar o limite do plano; negando, o app lê o arquivo do statusline | Não | Diálogo do Keychain (**Sempre Permitir** evita perguntar de novo) |
+
+Também usa a internet: GitHub (atualizações) e `api.anthropic.com` (limite do Claude Code, desligável nos Ajustes). Como o app não é assinado pela Apple, o macOS pode pedir as permissões de novo depois de uma atualização.
+
 ## Usar
 
 | Estado | Quando | Mostra |
@@ -152,6 +166,8 @@ Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`. Precisa do Rus
 |---|---|
 | Island não mostra a música | Ajustes do Sistema → Privacidade e Segurança → Automação → Dynamic Lite → ative **Spotify** |
 | Negou a permissão sem querer | `tccutil reset AppleEvents com.rafael.dynamic-lite` e abra o app de novo |
+| Gesto de 3 dedos ainda troca de mesa | Ajustes do Sistema → Privacidade e Segurança → Acessibilidade → ative **Dynamic Lite** (ou `tccutil reset Accessibility com.rafael.dynamic-lite`) |
+| Agenda sem eventos | Ajustes do Sistema → Privacidade e Segurança → Calendários → ative **Dynamic Lite** |
 | Equalizer não segue a música | Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e Áudio do Sistema → ative **Dynamic Lite** (ou `tccutil reset AudioCapture com.rafael.dynamic-lite`) |
 | "não pode ser aberto" / "está danificado" | `xattr -cr "/Applications/Dynamic Lite.app"` |
 | "não é compatível com este Mac" | Mac Intel com build só Apple Silicon: baixe o `.dmg` das Releases ou gere o universal |
