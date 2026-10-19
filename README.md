@@ -79,7 +79,7 @@ Clique direito na Island → **Ajustes…**. Tudo vale na hora, sem reiniciar.
 |---|---|---|
 | Aparência | Estilo do painel aberto | Preto, Translúcido (opacidade 60-100%), Vidro (Liquid Glass, macOS 26+), Capa |
 | | Cor de destaque | Da capa, Branca |
-| | Estilo do equalizer | Barras, ou um GIF seu (até 50 MB, tamanho 16-48 px). O GIF roda igual tocando ou pausado e fica em `equalizer.gif` na pasta de configuração |
+| | Estilo do equalizer | Barras, ou um GIF seu (até 50 MB, tamanho 16-32 px, limitado à altura da Island). O GIF roda igual tocando ou pausado e fica em `equalizer.gif` na pasta de configuração |
 | Comportamento | Abrir com | Passar o mouse (com atraso ajustável), Clique |
 | | Toque no trackpad | Clique leve sentido no dedo ao abrir e fechar |
 | Tela | Mostrar em | Automática (tela com notch), Principal, ou uma tela pelo nome |

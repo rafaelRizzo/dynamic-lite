@@ -57,7 +57,9 @@ function CompactEqualizer({
   look: EqualizerLook;
 }) {
   const art = Math.max(16, height - 12);
-  return <Equalizer playing={np.playback.state.status === "playing"} color={color} height={Math.round(art * 0.6)} look={look} />;
+  // o GIF não pode passar da altura da Island: estourar a linha do grid empurra a capa pra baixo
+  const compactLook = { ...look, equalizerGifSize: Math.min(look.equalizerGifSize, Math.max(16, height - 4)) };
+  return <Equalizer playing={np.playback.state.status === "playing"} color={color} height={Math.round(art * 0.6)} look={compactLook} />;
 }
 
 type ButtonProps = {

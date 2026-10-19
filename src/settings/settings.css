@@ -113,6 +113,12 @@
   flex: none;
 }
 
+/* vários botões na mesma linha */
+.st-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .st-note {
   margin: 0;
   padding: 8px 12px;

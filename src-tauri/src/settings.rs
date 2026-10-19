@@ -171,7 +171,7 @@ impl Settings {
 
     fn sanitized(mut self) -> Self {
         self.opacity = self.opacity.clamp(0.6, 1.0);
-        self.equalizer_gif_size = self.equalizer_gif_size.clamp(16, 48);
+        self.equalizer_gif_size = self.equalizer_gif_size.clamp(16, 32);
         self.hover_delay_ms = self.hover_delay_ms.min(1000);
         self.hover_exit_delay_ms = self.hover_exit_delay_ms.min(3000);
         if self.display.is_empty() {
