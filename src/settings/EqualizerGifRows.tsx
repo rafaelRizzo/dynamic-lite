@@ -45,14 +45,16 @@ export function EqualizerGifRows({ settings, update }: Props) {
         />
       </Row>
       <Row label="GIF" hint={hasGif ? `${formatMb(settings.equalizerGifBytes)} de ${LIMIT}` : `Só .gif, até ${LIMIT}`}>
-        <button className="st-button" onClick={pick} disabled={busy}>
-          {busy ? "Escolhendo..." : hasGif ? "Trocar" : "Enviar GIF"}
-        </button>
-        {hasGif && (
-          <button className="st-button" onClick={remove} disabled={busy}>
-            Remover
+        <div className="st-actions">
+          <button className="st-button" onClick={pick} disabled={busy}>
+            {busy ? "Escolhendo..." : hasGif ? "Trocar" : "Enviar GIF"}
           </button>
-        )}
+          {hasGif && (
+            <button className="st-button" onClick={remove} disabled={busy}>
+              Remover
+            </button>
+          )}
+        </div>
       </Row>
       {error && <Note>{error}</Note>}
       {hasGif && settings.equalizerStyle === "gif" && (
@@ -60,7 +62,7 @@ export function EqualizerGifRows({ settings, update }: Props) {
           <Range
             value={settings.equalizerGifSize}
             min={16}
-            max={48}
+            max={32}
             step={2}
             format={(v) => `${v}px`}
             onChange={(v) => update({ equalizerGifSize: v })}
