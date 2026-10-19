@@ -85,6 +85,35 @@ jobs:
           jq --arg v "${{ needs.version.outputs.version }}" '.version = $v' src-tauri/tauri.conf.json > tauri.conf.tmp
           mv tauri.conf.tmp src-tauri/tauri.conf.json
 
+      # O macOS amarra cada permissão (Automação, áudio, Calendários, Acessibilidade, Keychain) à identidade de assinatura
+      # do app. Ad-hoc ("-") tem identidade = hash do binário, que muda a cada build: toda atualização pede tudo de novo.
+      # Um certificado autoassinado fixo dá identidade estável (bundle id + certificado), e as permissões sobrevivem.
+      # Não é Developer ID: o Gatekeeper continua barrando (o `xattr -cr` da instalação segue valendo).
+      # Gerar o .p12 e cadastrar os secrets: ver "Assinatura" no README.
+      - name: Importar certificado de assinatura
+        env:
+          SIGNING_CERT_P12: ${{ secrets.SIGNING_CERT_P12 }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "$SIGNING_CERT_P12" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KEYCHAIN" -P "$SIGNING_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          # o codesign procura no keychain padrão e nos da lista: o novo entra na frente
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/signing.p12"
+          # certificado autoassinado aparece como não confiável (CSSMERR_TP_NOT_TRUSTED), mas o codesign assina por nome
+          security find-identity -p codesigning "$KEYCHAIN"
+
+      - name: Usar o certificado no tauri.conf.json
+        run: |
+          jq '.bundle.macOS.signingIdentity = "Dynamic Lite Signing"' src-tauri/tauri.conf.json > tauri.conf.tmp
+          mv tauri.conf.tmp src-tauri/tauri.conf.json
+
       # a tag ainda não existe aqui: scripts/tauri.sh usa APP_VERSION no lugar dela
       - uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
@@ -101,6 +130,10 @@ jobs:
           releaseBody: ${{ needs.version.outputs.notes }}
           releaseDraft: false
           prerelease: false
+
+      - name: Remover keychain de assinatura
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
 
       # build falhou ou foi cancelado: apaga a tag pra próxima versão não pular esta
       - name: Remover tag

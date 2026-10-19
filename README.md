@@ -53,7 +53,7 @@ O macOS pergunta cada uma na hora em que o recurso é usado. Só a de Automaçã
 | Acessibilidade | Com a Island aberta, o gesto de 3 dedos só troca de aba, sem trocar de mesa nem abrir o Mission Control; negando, o sistema reage ao gesto junto | Não | Privacidade e Segurança → Acessibilidade |
 | Keychain | Ler o token do Claude Code pra consultar o limite do plano; negando, o app lê o arquivo do statusline | Não | Diálogo do Keychain (**Sempre Permitir** evita perguntar de novo) |
 
-Também usa a internet: GitHub (atualizações) e `api.anthropic.com` (limite do Claude Code, desligável nos Ajustes). Como o app não é assinado pela Apple, o macOS pode pedir as permissões de novo depois de uma atualização.
+Também usa a internet: GitHub (atualizações) e `api.anthropic.com` (limite do Claude Code, desligável nos Ajustes). O app é assinado com um certificado próprio, não pela Apple, então as permissões sobrevivem às atualizações (ver [Assinatura](#assinatura)). Na primeira atualização depois dessa mudança o macOS ainda pede tudo uma última vez.
 
 ## Usar
 
@@ -160,6 +160,24 @@ bun run tauri build --target universal-apple-darwin
 ```
 
 Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`. Precisa do Rust instalado pelo rustup; o do Homebrew só tem a arquitetura da máquina.
+
+## Assinatura
+
+O macOS amarra cada permissão à identidade de assinatura do app. Com assinatura ad-hoc (`signingIdentity: "-"`) essa identidade é o hash do binário, que muda a cada build, e toda atualização pedia tudo de novo. A release usa um certificado autoassinado fixo (`Dynamic Lite Signing`): a identidade vira bundle id + certificado, igual em todo build. Não é Developer ID e não há notarização, então o `xattr -cr` da instalação continua necessário.
+
+Pra assinar a release no seu fork (uma vez):
+
+```bash
+D=~/.dynamic-lite-signing && mkdir -p $D && cd $D
+printf '[req]\ndistinguished_name=dn\nx509_extensions=v3\nprompt=no\n[dn]\nCN=Dynamic Lite Signing\n[v3]\nbasicConstraints=critical,CA:false\nkeyUsage=critical,digitalSignature\nextendedKeyUsage=critical,codeSigning\n' > openssl.cnf
+/usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 3650 -config openssl.cnf
+/usr/bin/openssl rand -base64 24 | tr -d '\n' > password.txt
+/usr/bin/openssl pkcs12 -export -inkey key.pem -in cert.pem -out signing.p12 -passout file:password.txt
+base64 -i signing.p12 | gh secret set SIGNING_CERT_P12 --env release
+gh secret set SIGNING_CERT_PASSWORD --env release < password.txt
+```
+
+Guarde o `.p12` e a senha em lugar seguro: com outro certificado a identidade muda, e as permissões são pedidas de novo uma vez. Use o `/usr/bin/openssl` (LibreSSL); o OpenSSL 3 gera um `.p12` que o `security import` do macOS não lê.
 
 ## Problemas comuns
 
