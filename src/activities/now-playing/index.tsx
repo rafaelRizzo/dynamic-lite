@@ -4,7 +4,7 @@ import { useArtworkColor } from "../../hooks/useArtworkColor";
 import { native, type Settings } from "../../lib/native";
 import { MusicIcon } from "../../panels/icons";
 import type { Activity, Panel } from "../types";
-import { Equalizer } from "./Equalizer";
+import { Equalizer, type EqualizerLook } from "./Equalizer";
 import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, RepeatOneIcon, ShuffleIcon } from "./Icons";
 import { Progress } from "./Progress";
 import { VolumeIcon, VolumePanel } from "./Volume";
@@ -13,6 +13,10 @@ import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
 const REPEAT_LABEL = { off: "Repetir playlist", context: "Repetir só esta faixa", track: "Desativar repetição" } as const;
 
 const EXPANDED_WIDTH = 400;
+/** lado da capa no cabeçalho da aberta; o GIF do equalizer não passa disso */
+const ART_EXPANDED = 56;
+/** o GIF na aberta é tantas vezes o tamanho da compacta */
+const GIF_EXPANDED_SCALE = 2;
 /** cabeçalho + progresso + controles + respiro inferior */
 const EXPANDED_BODY = 150;
 /** espaço extra quando o painel de volume está aberto */
@@ -41,9 +45,19 @@ function CompactArt({ np, height }: { np: NowPlayingControls; height: number }) 
   return <Artwork url={np.playback.state.track!.artworkUrl} size={art} radius={6} />;
 }
 
-function CompactEqualizer({ np, height, color }: { np: NowPlayingControls; height: number; color: string }) {
+function CompactEqualizer({
+  np,
+  height,
+  color,
+  look,
+}: {
+  np: NowPlayingControls;
+  height: number;
+  color: string;
+  look: EqualizerLook;
+}) {
   const art = Math.max(16, height - 12);
-  return <Equalizer playing={np.playback.state.status === "playing"} color={color} height={Math.round(art * 0.6)} />;
+  return <Equalizer playing={np.playback.state.status === "playing"} color={color} height={Math.round(art * 0.6)} look={look} />;
 }
 
 type ButtonProps = {
@@ -83,14 +97,17 @@ type ExpandedProps = {
   np: NowPlayingControls;
   topInset: number;
   color: string;
+  look: EqualizerLook;
   volumeOpen: boolean;
   setVolumeOpen: (open: boolean) => void;
 };
 
-function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedProps) {
+function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: ExpandedProps) {
   const { state } = np.playback;
   const track = state.track!;
   const playing = state.status === "playing";
+  // o GIF fica maior na aberta (o tamanho dos Ajustes vale pra compacta), sem passar da altura da capa
+  const expandedLook = { ...look, equalizerGifSize: Math.min(look.equalizerGifSize * GIF_EXPANDED_SCALE, ART_EXPANDED) };
   // a Island fechou: na próxima abertura o painel de volume começa recolhido
   useEffect(() => () => setVolumeOpen(false), [setVolumeOpen]);
   return (
@@ -105,13 +122,13 @@ function Expanded({ np, topInset, color, volumeOpen, setVolumeOpen }: ExpandedPr
           whileTap={{ scale: 0.92 }}
           transition={{ type: "spring", stiffness: 600, damping: 22 }}
         >
-          <Artwork url={track.artworkUrl} size={56} radius={12} />
+          <Artwork url={track.artworkUrl} size={ART_EXPANDED} radius={12} />
         </motion.button>
         <div className="np-meta">
           <div className="np-title" data-tip={track.name} data-tip-overflow>{track.name}</div>
           <div className="np-artist" data-tip={track.artist} data-tip-overflow>{track.artist}</div>
         </div>
-        <Equalizer playing={playing} color={color} height={18} />
+        <Equalizer playing={playing} color={color} height={18} look={expandedLook} />
       </div>
       <Progress
         playback={np.playback}
@@ -182,7 +199,7 @@ export function useNowPlayingFeature(settings: Settings): { activity: Activity |
           id: "now-playing",
           compact: ({ height }) => ({
             left: <CompactArt np={np} height={height} />,
-            right: <CompactEqualizer np={np} height={height} color={color} />,
+            right: <CompactEqualizer np={np} height={height} color={color} look={settings} />,
           }),
           theme: palette.theme,
         }
@@ -192,7 +209,7 @@ export function useNowPlayingFeature(settings: Settings): { activity: Activity |
     label: "Música",
     icon: <MusicIcon />,
     expanded: ({ topInset }) => (
-      <Expanded np={np} topInset={topInset} color={color} volumeOpen={volumeOpen} setVolumeOpen={setVolumeOpen} />
+      <Expanded np={np} topInset={topInset} color={color} look={settings} volumeOpen={volumeOpen} setVolumeOpen={setVolumeOpen} />
     ),
     // a Island "escorre" pra baixo quando o painel de volume abre
     expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY + (volumeOpen ? VOLUME_PANEL : 0) },

@@ -1,7 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-export type Notch = { width: number; height: number; hasNotch: boolean };
+/** Limite do GIF do equalizer (50 MB); o Rust confere de novo (`equalizer_gif.rs`). */
+export const MAX_GIF_BYTES = 50 * 1024 * 1024;
+
+export type Notch ={ width: number; height: number; hasNotch: boolean };
 
 export type PlayerStatus = "closed" | "stopped" | "playing" | "paused";
 
@@ -41,6 +44,13 @@ export type Settings = {
   hoverExitDelayMs: number;
   hideIdleWithoutNotch: boolean;
   accent: "artwork" | "white";
+  equalizerStyle: "bars" | "gif";
+  /** lado do GIF em px */
+  equalizerGifSize: number;
+  /** tamanho do GIF salvo, 0 = nenhum. Só o Rust escreve */
+  equalizerGifBytes: number;
+  /** muda a cada GIF novo; chave de recarga */
+  equalizerGifRev: number;
   haptics: boolean;
   /** deslizar com 3 dedos na Island aberta troca de aba */
   swipeTabs: boolean;
@@ -228,7 +238,13 @@ export const native = {
   /** 3 dedos no trackpad com o mouse na Island: 1 avança, -1 volta */
   onSwipe: on<number>("island://swipe"),
   onSpotify: on<PlayerState>("spotify://state"),
-  /** Equalizer ao vivo: 4 bandas 0-1 (grave → agudo), ~20fps enquanto toca. Não chega sem permissão/macOS < 14.2. */
+  /** Quadros por segundo do equalizer (definido no Rust, `equalizer.rs`). */
+  equalizerFps: () => invoke<number>("equalizer_fps"),
+  /** Abre o seletor nativo (só .gif); o Rust valida assinatura e limite. `false` = cancelou; erro vem como mensagem pronta. */
+  equalizerGifPick: () => invoke<boolean>("equalizer_gif_pick"),
+  equalizerGifRemove: () => invoke<void>("equalizer_gif_remove"),
+  equalizerGifRead: () => invoke<ArrayBuffer>("equalizer_gif_read"),
+  /** Equalizer ao vivo: 4 bandas 0-1 (grave → agudo), na taxa de `equalizerFps` enquanto toca. Não chega sem permissão/macOS < 14.2. */
   onLevels: on<number[]>("spotify://levels"),
   onSettings: on<Settings>("settings://changed"),
   onPomodoro: on<PomodoroState>("pomodoro://state"),

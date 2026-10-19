@@ -5,6 +5,7 @@ import { useUpdate } from "../hooks/useUpdate";
 import { native } from "../lib/native";
 import { SHORTCUTS } from "../panels/shortcuts/catalog";
 import { Chips, DurationField, Note, Range, Row, Section, Segmented, Toggle } from "./controls";
+import { EqualizerGifRows } from "./EqualizerGifRows";
 import icon from "../assets/icon.png";
 import "./settings.css";
 
@@ -175,6 +176,7 @@ export function SettingsApp() {
             />
           </Row>
         )}
+        <EqualizerGifRows settings={settings} update={update} />
       </Section>
 
       <Section title="Comportamento">
