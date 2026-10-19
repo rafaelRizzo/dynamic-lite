@@ -1021,6 +1021,13 @@ body,
   flex: none;
 }
 
+/* GIF enviado pelo usuário no lugar do equalizer (Equalizer.tsx) */
+.eq-gif {
+  display: block;
+  flex: none;
+  object-fit: contain;
+}
+
 /* ---------- Atualização ---------- */
 
 .up-compact-version {

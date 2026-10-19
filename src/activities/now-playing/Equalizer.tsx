@@ -1,5 +1,9 @@
 import { useEffect, useRef } from "react";
-import { native, subscribe } from "../../lib/native";
+import { native, subscribe, type Settings } from "../../lib/native";
+import { useEqualizerGif } from "./useEqualizerGif";
+
+/** O que decide o visual do equalizer: barras ou o GIF do usuário. */
+export type EqualizerLook = Pick<Settings, "equalizerStyle" | "equalizerGifSize" | "equalizerGifRev">;
 
 const BARS = 4;
 const BAR_W = 3;
@@ -13,7 +17,22 @@ const LIVE_TIMEOUT = 400;
 /** Constante de tempo (ms) da suavização rumo ao alvo; independe do fps (equivale a 0.45 por quadro a 20fps). */
 const SMOOTH_MS = 84;
 
-export function Equalizer({ playing, color, height = 14 }: { playing: boolean; color: string; height?: number }) {
+type EqualizerProps = { playing: boolean; color: string; height?: number; look: EqualizerLook };
+
+export function Equalizer({ look, ...bars }: EqualizerProps) {
+    return look.equalizerStyle === "gif" ? <GifEqualizer look={look} /> : <BarsEqualizer {...bars} />;
+}
+
+/** GIF do usuário no lugar das barras: um GIF comum, sem lógica de áudio, igual tocando ou pausado. */
+function GifEqualizer({ look }: { look: EqualizerLook }) {
+    const url = useEqualizerGif(look.equalizerGifRev);
+    const size = look.equalizerGifSize;
+    // enquanto carrega, reserva o espaço pro layout não pular
+    if (!url) return <span className="eq-gif" style={{ width: size, height: size }} />;
+    return <img src={url} className="eq-gif" style={{ width: size, height: size }} alt="" draggable={false} />;
+}
+
+function BarsEqualizer({ playing, color, height = 14 }: Omit<EqualizerProps, "look">) {
     const ref = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {

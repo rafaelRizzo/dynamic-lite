@@ -4,6 +4,7 @@ compile_error!("Dynamic Lite só roda no macOS");
 mod calendar;
 mod claude_usage;
 mod equalizer;
+mod equalizer_gif;
 mod gesture_guard;
 mod layout;
 mod macos;
@@ -197,6 +198,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, None))
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .manage(updater::Updates::default())
         .manage(layout.clone())
         .manage(spotify.clone())
@@ -238,6 +240,9 @@ pub fn run() {
             spotify::spotify_shuffle,
             spotify::spotify_repeat,
             equalizer::equalizer_fps,
+            equalizer_gif::equalizer_gif_pick,
+            equalizer_gif::equalizer_gif_remove,
+            equalizer_gif::equalizer_gif_read,
             updater::get_update,
             updater::check_update,
             updater::install_update,

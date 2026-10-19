@@ -38,6 +38,15 @@ pub enum Accent {
     White,
 }
 
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum EqualizerStyle {
+    #[default]
+    Bars,
+    /// GIF enviado pelo usuário (`equalizer_gif.rs`)
+    Gif,
+}
+
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
@@ -50,6 +59,13 @@ pub struct Settings {
     pub hover_exit_delay_ms: u32,
     pub hide_idle_without_notch: bool,
     pub accent: Accent,
+    pub equalizer_style: EqualizerStyle,
+    /// lado do GIF em px
+    pub equalizer_gif_size: u32,
+    /// tamanho do GIF salvo (0 = nenhum). Só o Rust escreve, via `set_gif`
+    pub equalizer_gif_bytes: u64,
+    /// muda a cada GIF novo (ms desde a época), pro frontend recarregar mesmo com o mesmo tamanho
+    pub equalizer_gif_rev: u64,
     pub haptics: bool,
     /// deslizar com 3 dedos na Island aberta troca de aba
     pub swipe_tabs: bool,
@@ -98,6 +114,10 @@ impl Default for Settings {
             hover_exit_delay_ms: 300,
             hide_idle_without_notch: true,
             accent: Accent::Artwork,
+            equalizer_style: EqualizerStyle::Bars,
+            equalizer_gif_size: 24,
+            equalizer_gif_bytes: 0,
+            equalizer_gif_rev: 0,
             haptics: true,
             swipe_tabs: true,
             invert_swipe: false,
@@ -138,8 +158,20 @@ impl Settings {
         }
     }
 
+    /// Registra (ou zera) o GIF salvo; sem GIF, o estilo volta pras barras.
+    fn set_gif_bytes(&mut self, bytes: u64) {
+        self.equalizer_gif_bytes = bytes;
+        self.equalizer_gif_rev = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_millis() as u64);
+        if bytes == 0 && self.equalizer_style == EqualizerStyle::Gif {
+            self.equalizer_style = EqualizerStyle::Bars;
+        }
+    }
+
     fn sanitized(mut self) -> Self {
         self.opacity = self.opacity.clamp(0.6, 1.0);
+        self.equalizer_gif_size = self.equalizer_gif_size.clamp(16, 48);
         self.hover_delay_ms = self.hover_delay_ms.min(1000);
         self.hover_exit_delay_ms = self.hover_exit_delay_ms.min(3000);
         if self.display.is_empty() {
@@ -169,11 +201,16 @@ fn path(app: &AppHandle) -> Option<PathBuf> {
 }
 
 pub fn load(app: &AppHandle) -> Settings {
-    path(app)
+    let mut loaded = path(app)
         .and_then(|p| fs::read_to_string(p).ok())
         .and_then(|raw| serde_json::from_str::<Settings>(&raw).ok())
         .unwrap_or_default()
-        .sanitized()
+        .sanitized();
+    // o arquivo do GIF sumiu (apagado à mão): volta pras barras em vez de mostrar nada
+    if loaded.equalizer_gif_bytes > 0 && !crate::equalizer_gif::exists(app) {
+        loaded.set_gif_bytes(0);
+    }
+    loaded
 }
 
 fn save(app: &AppHandle, settings: &Settings) -> Result<(), String> {
@@ -190,9 +227,30 @@ pub fn get_settings(settings: State<'_, SharedSettings>) -> Settings {
     settings.lock().unwrap().clone()
 }
 
+/// Chamado por `equalizer_gif`: grava o tamanho do GIF e avisa as janelas.
+pub fn set_gif(app: &AppHandle, shared: &SharedSettings, bytes: u64) -> Result<(), String> {
+    let value = {
+        let mut guard = shared.lock().unwrap();
+        guard.set_gif_bytes(bytes);
+        guard.clone()
+    };
+    save(app, &value)?;
+    let _ = app.emit(CHANGED_EVENT, &value);
+    Ok(())
+}
+
 #[tauri::command]
 pub fn set_settings(app: AppHandle, value: Settings, settings: State<'_, SharedSettings>) -> Result<(), String> {
-    let value = value.sanitized();
+    let mut value = value.sanitized();
+    {
+        // dados do GIF são do Rust: o frontend não sobrescreve (pode estar com a cópia antiga)
+        let current = settings.lock().unwrap();
+        value.equalizer_gif_bytes = current.equalizer_gif_bytes;
+        value.equalizer_gif_rev = current.equalizer_gif_rev;
+    }
+    if value.equalizer_gif_bytes == 0 && value.equalizer_style == EqualizerStyle::Gif {
+        value.equalizer_style = EqualizerStyle::Bars;
+    }
     let previous = std::mem::replace(&mut *settings.lock().unwrap(), value.clone());
     save(&app, &value)?;
 
