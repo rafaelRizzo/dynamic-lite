@@ -39,8 +39,9 @@ use tauri::{AppHandle, Emitter};
 pub const LEVELS_EVENT: &str = "spotify://levels";
 /// Inclui os helpers do Spotify (`com.spotify.client.helper...`).
 const BUNDLE_PREFIX: &str = "com.spotify.client";
-/// ~20fps; o canvas suaviza entre os quadros.
-const FRAME: Duration = Duration::from_millis(50);
+/// Quadros por segundo, do envio dos níveis e do desenho no frontend (lido por `equalizer_fps`).
+const FPS: u64 = 24;
+const FRAME: Duration = Duration::from_millis(1000 / FPS);
 /// Variação mínima (0-1) em alguma barra pra valer um novo evento; abaixo disso o olho não vê.
 const MIN_DELTA: f32 = 0.015;
 /// Tocando sem tap (Spotify ainda sem processo de áudio, device ocupado): tenta de novo.
@@ -404,6 +405,11 @@ impl Drop for Tap {
             drop(Box::from_raw(self.analyzer));
         }
     }
+}
+
+#[tauri::command]
+pub fn equalizer_fps() -> u64 {
+    FPS
 }
 
 fn spawn_emitter(app: AppHandle, levels: Arc<Levels>, alive: Arc<AtomicBool>) {

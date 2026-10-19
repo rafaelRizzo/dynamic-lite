@@ -237,6 +237,7 @@ pub fn run() {
             spotify::spotify_open,
             spotify::spotify_shuffle,
             spotify::spotify_repeat,
+            equalizer::equalizer_fps,
             updater::get_update,
             updater::check_update,
             updater::install_update,
