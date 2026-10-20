@@ -8,6 +8,8 @@ import type { Activity, Panel } from "../types";
 
 const EXPANDED = { width: 400, height: 96 };
 const ART_EXPANDED = 72;
+/** igual ao da compacta num notch de 32 px (capa de 20 px x 0,85) */
+const EQUALIZER_HEIGHT = 17;
 
 /** Som audível no sistema e o que se sabe dele (o Rust só liga isso com a opção ativa e o Spotify parado). */
 function useSystemAudio(enabled: boolean): { active: boolean; media: SystemMedia | null } {
@@ -51,7 +53,7 @@ function Expanded({ media, topInset, look, color }: { media: SystemMedia | null;
           <div className="np-title" data-tip={title} data-tip-overflow>{title}</div>
           <div className="np-artist" data-tip={subtitle} data-tip-overflow>{subtitle}</div>
         </div>
-        <Equalizer playing color={color} height={24} look={expandedLook} />
+        <Equalizer playing color={color} height={EQUALIZER_HEIGHT} look={expandedLook} />
       </div>
     </div>
   );

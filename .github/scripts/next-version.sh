@@ -70,7 +70,7 @@ notes=$(
   cat <<'MD'
 ### Instalação
 
-1. Baixe o `.dmg` abaixo (universal: Apple Silicon e Intel), abra e arraste **Dynamic Lite** pra **Aplicativos**.
+1. Baixe o `.dmg` abaixo (só Apple Silicon), abra e arraste **Dynamic Lite** pra **Aplicativos**.
 2. O app não é assinado pela Apple. Na primeira vez, rode no Terminal:
    ```bash
    xattr -cr "/Applications/Dynamic Lite.app"

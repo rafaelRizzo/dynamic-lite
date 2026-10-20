@@ -13,6 +13,8 @@ import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
 const REPEAT_LABEL = { off: "Repetir playlist", context: "Repetir só esta faixa", track: "Desativar repetição" } as const;
 
 const EXPANDED_WIDTH = 400;
+/** altura do equalizer na compacta, em fração da capa */
+const COMPACT_EQ_SCALE = 0.85;
 /** lado da capa no cabeçalho da aberta; o GIF do equalizer não passa disso */
 const ART_EXPANDED = 56;
 /** o GIF na aberta é tantas vezes o tamanho da compacta */
@@ -59,7 +61,7 @@ export function CompactEqualizer({
   const art = Math.max(16, height - 12);
   // o GIF não pode passar da altura da Island: estourar a linha do grid empurra a capa pra baixo
   const compactLook = { ...look, equalizerGifSize: Math.min(look.equalizerGifSize, Math.max(16, height - 4)) };
-  return <Equalizer playing={playing} color={color} height={Math.round(art * 0.6)} look={compactLook} />;
+  return <Equalizer playing={playing} color={color} height={Math.round(art * COMPACT_EQ_SCALE)} look={compactLook} />;
 }
 
 type ButtonProps = {

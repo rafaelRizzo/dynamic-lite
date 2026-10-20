@@ -29,7 +29,7 @@ Dynamic Island para macOS: uma forma "líquida" que vive no notch e vira player 
 
 ## Instalar
 
-1. Baixe o `.dmg` mais recente em [Releases](https://github.com/rafaelRizzo/dynamic-lite/releases/latest). É universal (Apple Silicon e Intel), macOS 12 ou mais novo.
+1. Baixe o `.dmg` mais recente em [Releases](https://github.com/rafaelRizzo/dynamic-lite/releases/latest). Só Apple Silicon (M1 ou mais novo), macOS 12 ou mais novo.
 2. Abra o `.dmg` e arraste **Dynamic Lite** pra **Aplicativos**.
 3. O app não é assinado pela Apple. Na primeira vez, rode no Terminal:
    ```bash
@@ -116,7 +116,7 @@ Medido num Mac Apple Silicon, macOS 26, build de release, Spotify tocando com a 
 
 | Métrica | Valor |
 |---|---|
-| Download (`.dmg` universal) | ~7,4 MB |
+| Download (`.dmg`, Apple Silicon) | ~7,4 MB |
 | Em disco (`.app`) | ~17 MB |
 | Memória | ~155 MB no total: ~54 MB do app + ~120 MB dos processos do WebKit do macOS (WebContent, GPU, Rede) |
 | CPU | ~3% de um núcleo em média, somando app e WebKit (parado, com a Island invisível: ~0,5%) |
@@ -154,14 +154,7 @@ cp -R "src-tauri/target/release/bundle/macos/Dynamic Lite.app" /Applications/
 open "/Applications/Dynamic Lite.app"
 ```
 
-O build sai pra arquitetura do seu Mac. Pra gerar um universal (Apple Silicon + Intel):
-
-```bash
-rustup target add x86_64-apple-darwin aarch64-apple-darwin
-bun run tauri build --target universal-apple-darwin
-```
-
-Sai em `src-tauri/target/universal-apple-darwin/release/bundle/`. Precisa do Rust instalado pelo rustup; o do Homebrew só tem a arquitetura da máquina.
+O build sai pra arquitetura do seu Mac. As Releases só têm Apple Silicon; pra rodar em Intel, compile num Mac Intel ou, com o Rust do rustup, `rustup target add x86_64-apple-darwin` e `bun run tauri build --target x86_64-apple-darwin` (sai em `src-tauri/target/x86_64-apple-darwin/release/bundle/`).
 
 ## Assinatura
 
@@ -191,7 +184,7 @@ Guarde o `.p12` e a senha em lugar seguro: com outro certificado a identidade mu
 | Agenda sem eventos | Ajustes do Sistema → Privacidade e Segurança → Calendários → ative **Dynamic Lite** |
 | Equalizer não segue a música | Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e Áudio do Sistema → ative **Dynamic Lite** (ou `tccutil reset AudioCapture com.rafael.dynamic-lite`) |
 | "não pode ser aberto" / "está danificado" | `xattr -cr "/Applications/Dynamic Lite.app"` |
-| "não é compatível com este Mac" | Mac Intel com build só Apple Silicon: baixe o `.dmg` das Releases ou gere o universal |
+| "não é compatível com este Mac" | Mac Intel: as Releases são só Apple Silicon, compile no próprio Mac (ver acima) |
 | Island na tela errada | Ajustes → Tela → **Mostrar em** |
 | Island cobrindo a barra de mesas | Ajustes → Tela → **Esconder no Mission Control** |
 
