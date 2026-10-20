@@ -1,6 +1,6 @@
-//! Equalizer ao vivo (ADR 0005): captura o áudio do Spotify com um Core Audio Process Tap (macOS 14.2+)
-//! e reduz a 4 bandas de energia, emitidas pro frontend. Sem suporte ou sem permissão, nada é emitido
-//! e o frontend mantém a animação CSS.
+//! Equalizer ao vivo (ADR 0005, 0010): captura o áudio do Spotify, ou de todo o sistema quando o Spotify não
+//! toca e a opção está ligada, com um Core Audio Process Tap (macOS 14.2+) e reduz a 4 bandas de energia,
+//! emitidas pro frontend. Sem suporte ou sem permissão, nada é emitido e o frontend mantém a animação CSS.
 
 use std::ffi::{c_char, c_int, c_void, CStr};
 use std::mem::{size_of, MaybeUninit};
@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{self, RecvTimeoutError, Sender};
 use std::sync::{Arc, OnceLock};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use objc2::rc::Retained;
 use objc2::runtime::{AnyClass, AnyObject};
@@ -21,7 +21,7 @@ use objc2_core_audio::{
     kAudioAggregateDeviceTapListKey, kAudioAggregateDeviceUIDKey, kAudioDevicePropertyDeviceUID,
     kAudioHardwarePropertyDefaultOutputDevice, kAudioHardwarePropertyProcessObjectList,
     kAudioObjectPropertyElementMain, kAudioObjectPropertyScopeGlobal, kAudioObjectSystemObject,
-    kAudioProcessPropertyBundleID, kAudioSubDeviceUIDKey, kAudioSubTapDriftCompensationKey,
+    kAudioProcessPropertyBundleID, kAudioProcessPropertyIsRunningOutput, kAudioProcessPropertyPID, kAudioSubDeviceUIDKey, kAudioSubTapDriftCompensationKey,
     kAudioSubTapUIDKey, kAudioTapPropertyFormat, AudioDeviceCreateIOProcID,
     AudioDeviceDestroyIOProcID, AudioDeviceIOProcID, AudioDeviceStart, AudioDeviceStop,
     AudioHardwareCreateAggregateDevice, AudioHardwareDestroyAggregateDevice, AudioObjectGetPropertyData,
@@ -34,9 +34,13 @@ use objc2_core_audio_types::{
 };
 use objc2_core_foundation::{CFDictionary, CFRetained, CFString};
 use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSString};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
-pub const LEVELS_EVENT: &str = "spotify://levels";
+use crate::settings::SharedSettings;
+
+pub const LEVELS_EVENT: &str = "equalizer://levels";
+/// `bool`: há áudio audível no sistema (só com a fonte Sistema).
+pub const SYSTEM_EVENT: &str = "equalizer://system";
 /// Inclui os helpers do Spotify (`com.spotify.client.helper...`).
 const BUNDLE_PREFIX: &str = "com.spotify.client";
 /// Quadros por segundo, do envio dos níveis e do desenho no frontend (lido por `equalizer_fps`).
@@ -46,6 +50,10 @@ const FRAME: Duration = Duration::from_millis(1000 / FPS);
 const MIN_DELTA: f32 = 0.015;
 /// Tocando sem tap (Spotify ainda sem processo de áudio, device ocupado): tenta de novo.
 const RETRY: Duration = Duration::from_secs(5);
+/// Com a fonte Sistema ligada, de quanto em quanto tempo se olha se algum app começou/parou de tocar.
+const POLL: Duration = Duration::from_secs(1);
+/// Sem sinal por esse tempo, o áudio do sistema conta como parado (pausas e silêncios curtos não piscam a Island).
+const SYSTEM_HOLD: Duration = Duration::from_secs(2);
 
 /// Centro (Hz) de cada barra, da esquerda pra direita: grave, médio-grave, médio, agudo.
 const BANDS: [f32; 4] = [80.0, 350.0, 1500.0, 6000.0];
@@ -157,6 +165,26 @@ fn spotify_processes() -> Vec<AudioObjectID> {
     }
 }
 
+/// Bundle ids dos processos, fora o próprio app, com saída de áudio aberta (pode estar em silêncio).
+/// Helpers de navegador vêm como `com.google.Chrome.helper...`.
+pub fn output_bundles() -> Vec<String> {
+    let own = std::process::id() as i32;
+    unsafe {
+        get_ids(SYSTEM, kAudioHardwarePropertyProcessObjectList)
+            .into_iter()
+            .filter(|&p| {
+                get::<u32>(p, kAudioProcessPropertyIsRunningOutput).is_some_and(|r| r != 0)
+                    && get::<i32>(p, kAudioProcessPropertyPID).is_some_and(|pid| pid != own)
+            })
+            .map(|p| get_string(p, kAudioProcessPropertyBundleID).unwrap_or_default())
+            .collect()
+    }
+}
+
+fn system_output_running() -> bool {
+    !output_bundles().is_empty()
+}
+
 // ---------- Análise (thread de IO, tempo real: sem alocação nem lock) ----------
 
 /// Passa-banda RBJ (ganho 0 dB no centro), forma direta transposta II.
@@ -191,8 +219,9 @@ impl Biquad {
 #[derive(Default)]
 struct Levels {
     bands: [AtomicU32; 4],
-    /// Já chegou áudio de verdade (com permissão negada o tap só entrega zeros).
-    heard: AtomicBool,
+    /// Quantos blocos de áudio de verdade já chegaram (com permissão negada o tap só entrega zeros);
+    /// quem lê compara com a leitura anterior pra saber se ainda há som.
+    heard: AtomicU32,
 }
 
 struct Analyzer {
@@ -270,7 +299,7 @@ impl Analyzer {
             self.levels.bands[i].store(level.to_bits(), Ordering::Relaxed);
         }
         if heard {
-            self.levels.heard.store(true, Ordering::Relaxed);
+            self.levels.heard.fetch_add(1, Ordering::Relaxed);
         }
     }
 }
@@ -305,8 +334,17 @@ fn dict(entries: &[(&CStr, &AnyObject)]) -> Retained<NSDictionary<NSString, AnyO
     NSDictionary::from_slices(&keys, &values)
 }
 
-/// Tap no Spotify + aggregate device privado que o lê. Desfaz tudo no Drop.
+/// O que o tap captura.
+#[derive(Clone, Copy, PartialEq)]
+enum Source {
+    Spotify,
+    /// Mixagem de todos os apps; o frontend só mostra enquanto houver som audível.
+    System,
+}
+
+/// Tap + aggregate device privado que o lê. Desfaz tudo no Drop.
 struct Tap {
+    source: Source,
     tap: AudioObjectID,
     device: AudioObjectID,
     proc_id: AudioDeviceIOProcID,
@@ -315,18 +353,26 @@ struct Tap {
 }
 
 impl Tap {
-    fn start(app: &AppHandle) -> Option<Self> {
+    fn start(app: &AppHandle, source: Source) -> Option<Self> {
         let (create_tap, destroy_tap) = tap_api()?;
-        let processes = spotify_processes();
-        if processes.is_empty() {
-            return None;
-        }
         unsafe {
-            let numbers: Vec<Retained<NSNumber>> = processes.iter().map(|&p| NSNumber::new_u32(p)).collect();
-            let desc = CATapDescription::initStereoMixdownOfProcesses(
-                CATapDescription::alloc(),
-                &NSArray::from_retained_slice(&numbers),
-            );
+            let desc = match source {
+                Source::Spotify => {
+                    let processes = spotify_processes();
+                    if processes.is_empty() {
+                        return None;
+                    }
+                    let numbers: Vec<Retained<NSNumber>> = processes.iter().map(|&p| NSNumber::new_u32(p)).collect();
+                    CATapDescription::initStereoMixdownOfProcesses(
+                        CATapDescription::alloc(),
+                        &NSArray::from_retained_slice(&numbers),
+                    )
+                }
+                Source::System => CATapDescription::initStereoGlobalTapButExcludeProcesses(
+                    CATapDescription::alloc(),
+                    &NSArray::<NSNumber>::new(),
+                ),
+            };
             desc.setPrivate(true);
             desc.setMuteBehavior(CATapMuteBehavior::Unmuted);
 
@@ -379,11 +425,11 @@ impl Tap {
             let created = AudioDeviceCreateIOProcID(device, Some(io_proc), analyzer.cast(), NonNull::from(&mut proc_id));
             let alive = Arc::new(AtomicBool::new(true));
             // Drop desfaz o que já foi criado se o start falhar
-            let this = Self { tap, device, proc_id, analyzer, alive: alive.clone() };
+            let this = Self { source, tap, device, proc_id, analyzer, alive: alive.clone() };
             if created != 0 || proc_id.is_none() || AudioDeviceStart(device, proc_id) != 0 {
                 return None;
             }
-            spawn_emitter(app.clone(), levels, alive);
+            spawn_emitter(app.clone(), levels, alive, source);
             Some(this)
         }
     }
@@ -392,6 +438,9 @@ impl Tap {
 impl Drop for Tap {
     fn drop(&mut self) {
         self.alive.store(false, Ordering::Relaxed);
+        if self.source == Source::System {
+            SYSTEM_ACTIVE.store(false, Ordering::Relaxed);
+        }
         unsafe {
             if self.proc_id.is_some() {
                 // síncrono: depois disso o io_proc não roda mais
@@ -412,12 +461,43 @@ pub fn equalizer_fps() -> u64 {
     FPS
 }
 
-fn spawn_emitter(app: AppHandle, levels: Arc<Levels>, alive: Arc<AtomicBool>) {
+/// Há som audível no sistema agora (lido por `equalizer_system_active`; o evento cobre as mudanças).
+static SYSTEM_ACTIVE: AtomicBool = AtomicBool::new(false);
+
+#[tauri::command]
+pub fn equalizer_system_active() -> bool {
+    system_active()
+}
+
+pub fn system_active() -> bool {
+    SYSTEM_ACTIVE.load(Ordering::Relaxed)
+}
+
+fn spawn_emitter(app: AppHandle, levels: Arc<Levels>, alive: Arc<AtomicBool>, source: Source) {
     thread::spawn(move || {
         let mut sent = [f32::NAN; 4];
+        let mut heard = 0;
+        let mut silent_since = Instant::now();
+        let mut audible = false;
         while alive.load(Ordering::Relaxed) {
             thread::sleep(FRAME);
-            if alive.load(Ordering::Relaxed) && levels.heard.load(Ordering::Relaxed) {
+            if !alive.load(Ordering::Relaxed) {
+                break;
+            }
+            let count = levels.heard.load(Ordering::Relaxed);
+            if count != heard {
+                heard = count;
+                silent_since = Instant::now();
+            }
+            if source == Source::System {
+                let now = count > 0 && silent_since.elapsed() < SYSTEM_HOLD;
+                if now != audible {
+                    audible = now;
+                    SYSTEM_ACTIVE.store(now, Ordering::Relaxed);
+                    let _ = app.emit(SYSTEM_EVENT, now);
+                }
+            }
+            if count > 0 {
                 let bands = levels.bands.each_ref().map(|b| f32::from_bits(b.load(Ordering::Relaxed)));
                 // NaN inicial: o primeiro quadro sempre sai
                 if bands.iter().zip(&sent).any(|(b, s)| !((b - s).abs() < MIN_DELTA)) {
@@ -426,29 +506,71 @@ fn spawn_emitter(app: AppHandle, levels: Arc<Levels>, alive: Arc<AtomicBool>) {
                 }
             }
         }
+        if audible {
+            let _ = app.emit(SYSTEM_EVENT, false);
+        }
     });
 }
 
-/// Liga o tap enquanto o Spotify toca; pausado/fechado, desliga (some o indicador de gravação).
+pub enum Msg {
+    /// O Spotify começou ou parou de tocar.
+    Spotify(bool),
+    /// Os Settings mudaram.
+    Refresh,
+}
+
+/// Canal do controlador, guardado no estado do Tauri pra os Settings avisarem.
+pub struct Control(Sender<Msg>);
+
+impl Control {
+    pub fn refresh(&self) {
+        let _ = self.0.send(Msg::Refresh);
+    }
+}
+
+/// Fonte que deve estar capturada agora: o Spotify tocando manda; senão, o sistema (se ligado e com saída aberta).
+fn wanted(spotify: bool, system: bool) -> Option<Source> {
+    if spotify {
+        Some(Source::Spotify)
+    } else if system && system_output_running() {
+        Some(Source::System)
+    } else {
+        None
+    }
+}
+
+/// Liga o tap enquanto há o que mostrar; sem áudio, desliga (some o indicador de gravação).
 /// Thread própria: criar o tap pode bloquear (prompt de permissão) e não deve travar o watcher.
-pub fn spawn(app: AppHandle) -> Sender<bool> {
+pub fn spawn(app: AppHandle) -> Sender<Msg> {
     let (tx, rx) = mpsc::channel();
+    app.manage(Control(tx.clone()));
     thread::spawn(move || {
+        let settings = app.state::<SharedSettings>();
         let mut tap: Option<Tap> = None;
-        let mut playing = false;
+        let mut spotify = false;
         loop {
-            match rx.recv_timeout(RETRY) {
-                Ok(p) => playing = p,
-                Err(RecvTimeoutError::Timeout) => {}
+            let system = settings.lock().unwrap().system_audio;
+            // com o sistema ligado e nada tocando, olha a cada segundo se algum app começou
+            let wait = if system { POLL } else { RETRY };
+            match rx.recv_timeout(wait) {
+                Ok(Msg::Spotify(p)) => spotify = p,
+                Ok(Msg::Refresh) | Err(RecvTimeoutError::Timeout) => {}
                 Err(RecvTimeoutError::Disconnected) => break,
             }
-            while let Ok(p) = rx.try_recv() {
-                playing = p;
+            while let Ok(msg) = rx.try_recv() {
+                if let Msg::Spotify(p) = msg {
+                    spotify = p;
+                }
             }
-            if !playing {
-                tap = None;
-            } else if tap.is_none() {
-                tap = Tap::start(&app);
+            let system = settings.lock().unwrap().system_audio;
+            match wanted(spotify, system) {
+                None => tap = None,
+                Some(source) if tap.as_ref().is_none_or(|t| t.source != source) => {
+                    // o tap antigo sai antes do novo entrar
+                    drop(tap.take());
+                    tap = Tap::start(&app, source);
+                }
+                Some(_) => {}
             }
         }
     });

@@ -61,6 +61,7 @@ Também usa a internet: GitHub (atualizações) e `api.anthropic.com` (limite do
 |---|---|---|
 | Parada | nada tocando | só o notch, invisível |
 | Compacta | Spotify tocando | capa à esquerda, equalizer à direita |
+| Compacta | outro app tocando (opção **Seguir o áudio do sistema**, Spotify parado) | nota musical à esquerda, equalizer à direita |
 | Aberta | mouse sobre a Island | capa, faixa, progresso, controles, aleatório, repetir e volume |
 
 - **Clique na capa** (aberta): abre a faixa no Spotify.
@@ -80,6 +81,7 @@ Clique direito na Island → **Ajustes…**. Tudo vale na hora, sem reiniciar.
 | Aparência | Estilo do painel aberto | Preto, Translúcido (opacidade 60-100%), Vidro (Liquid Glass, macOS 26+), Capa |
 | | Cor de destaque | Da capa, Branca |
 | | Estilo do equalizer | Barras, ou um GIF seu (até 50 MB, tamanho 16-32 px, limitado à altura da Island). O GIF roda igual tocando ou pausado e fica em `equalizer.gif` na pasta de configuração |
+| Áudio | Seguir o áudio do sistema | Desligado por padrão. Com o Spotify parado, qualquer app tocando (YouTube, Apple Music...) mostra equalizer e uma aba "Áudio"; em navegador (Chrome, Edge, Brave, Arc, Safari...) lê o título da aba de YouTube e afins, com miniatura no YouTube (pede Automação do navegador). Mantém o indicador de gravação de áudio enquanto algum app tiver áudio aberto |
 | Comportamento | Abrir com | Passar o mouse (com atraso ajustável), Clique |
 | | Toque no trackpad | Clique leve sentido no dedo ao abrir e fechar |
 | Tela | Mostrar em | Automática (tela com notch), Principal, ou uma tela pelo nome |

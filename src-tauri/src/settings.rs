@@ -60,6 +60,8 @@ pub struct Settings {
     pub hide_idle_without_notch: bool,
     pub accent: Accent,
     pub equalizer_style: EqualizerStyle,
+    /// com o Spotify parado, o equalizer e a Island seguem o áudio de qualquer app (ADR 0010)
+    pub system_audio: bool,
     /// lado do GIF em px
     pub equalizer_gif_size: u32,
     /// tamanho do GIF salvo (0 = nenhum). Só o Rust escreve, via `set_gif`
@@ -115,6 +117,7 @@ impl Default for Settings {
             hide_idle_without_notch: true,
             accent: Accent::Artwork,
             equalizer_style: EqualizerStyle::Bars,
+            system_audio: false,
             equalizer_gif_size: 24,
             equalizer_gif_bytes: 0,
             equalizer_gif_rev: 0,
@@ -259,6 +262,9 @@ pub fn set_settings(app: AppHandle, value: Settings, settings: State<'_, SharedS
     }
     if (previous.all_spaces, previous.hide_in_mission_control) != (value.all_spaces, value.hide_in_mission_control) {
         crate::apply_spaces_behavior(&app);
+    }
+    if previous.system_audio != value.system_audio {
+        app.state::<crate::equalizer::Control>().refresh();
     }
     if previous.show_menu_bar_icon != value.show_menu_bar_icon {
         crate::menu::set_tray_visible(&app, value.show_menu_bar_icon);

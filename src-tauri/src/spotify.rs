@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 
-use crate::macos;
+use crate::{equalizer, macos};
 
 const BUNDLE_ID: &str = "com.spotify.client";
 pub const STATE_EVENT: &str = "spotify://state";
@@ -180,7 +180,7 @@ fn repeat_one(spotify: &Spotify, id: &str, state: PlayerState, prev: Option<&(Pl
 }
 
 /// Lê o estado quando acordado (notificação do Spotify ou comando) ou num polling lento de segurança.
-pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>, equalizer: Sender<bool>) {
+pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>, equalizer: Sender<equalizer::Msg>) {
     thread::spawn(move || {
         let mut prev: Option<(PlayerState, Instant)> = None;
         loop {
@@ -204,7 +204,7 @@ pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>, eq
                 interval = interval.min(Duration::from_secs_f64(until_lead));
             }
 
-            let _ = equalizer.send(state.status == Status::Playing);
+            let _ = equalizer.send(equalizer::Msg::Spotify(state.status == Status::Playing));
             {
                 let mut last = spotify.last.lock().unwrap();
                 if *last != state {
