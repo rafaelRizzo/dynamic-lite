@@ -179,6 +179,18 @@ export function SettingsApp() {
         <EqualizerGifRows settings={settings} update={update} />
       </Section>
 
+      <Section title="Áudio">
+        <Row label="Seguir o áudio do sistema" hint="YouTube, Apple Music e outros apps">
+          <Toggle checked={settings.systemAudio} onChange={(systemAudio) => update({ systemAudio })} />
+        </Row>
+        {settings.systemAudio && (
+          <Note>
+            Com o Spotify parado, a Island mostra uma nota e o equalizer enquanto algum app tocar. Enquanto algum app
+            estiver com áudio aberto, o macOS mostra o indicador de gravação de áudio. Pede a mesma permissão do equalizer do Spotify.
+          </Note>
+        )}
+      </Section>
+
       <Section title="Comportamento">
         <Row label="Abrir com">
           <Segmented

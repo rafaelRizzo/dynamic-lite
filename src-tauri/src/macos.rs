@@ -130,6 +130,18 @@ pub fn is_app_running(bundle_id: &str) -> bool {
         .any(|app| !app.isTerminated())
 }
 
+/// Nome do app em execução com esse bundle id (ou o do app dono, se for um helper `...helper`).
+pub fn app_name(bundle_id: &str) -> Option<String> {
+    let lower = bundle_id.to_ascii_lowercase();
+    let base = lower.find(".helper").map_or(bundle_id, |i| &bundle_id[..i]);
+    let id = NSString::from_str(base);
+    NSRunningApplication::runningApplicationsWithBundleIdentifier(&id)
+        .iter()
+        .find(|app| !app.isTerminated())
+        .and_then(|app| app.localizedName())
+        .map(|n| n.to_string())
+}
+
 fn observe(
     center: &NSNotificationCenter,
     name: &NSNotificationName,

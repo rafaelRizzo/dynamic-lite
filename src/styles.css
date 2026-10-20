@@ -1028,6 +1028,25 @@ body,
   object-fit: contain;
 }
 
+/* ---------- Áudio do sistema ---------- */
+
+.sa-badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.14);
+  color: #fff;
+}
+/* aba Áudio: o tamanho vem da maior aba, então o conteúdo centraliza no espaço que sobra */
+.sa-expanded {
+  justify-content: center;
+}
+.sa-badge svg {
+  width: 60%;
+  height: 60%;
+}
+
 /* ---------- Atualização ---------- */
 
 .up-compact-version {

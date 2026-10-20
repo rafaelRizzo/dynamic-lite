@@ -15,6 +15,7 @@ mod scheduler;
 mod settings;
 mod sound;
 mod spotify;
+mod system_media;
 mod updater;
 
 use std::sync::{mpsc, Arc, Mutex};
@@ -202,6 +203,7 @@ pub fn run() {
         .manage(updater::Updates::default())
         .manage(layout.clone())
         .manage(spotify.clone())
+        .manage(system_media::Current::default())
         .on_menu_event(menu::handle_event)
         .invoke_handler(tauri::generate_handler![
             get_notch,
@@ -240,6 +242,8 @@ pub fn run() {
             spotify::spotify_shuffle,
             spotify::spotify_repeat,
             equalizer::equalizer_fps,
+            equalizer::equalizer_system_active,
+            system_media::system_media,
             equalizer_gif::equalizer_gif_pick,
             equalizer_gif::equalizer_gif_remove,
             equalizer_gif::equalizer_gif_read,
@@ -297,6 +301,7 @@ pub fn run() {
             spawn_hover_tracker(app.handle().clone(), layout.clone());
             let eq = equalizer::spawn(app.handle().clone());
             spotify::spawn_watcher(app.handle().clone(), spotify.clone(), wake_rx, eq);
+            system_media::spawn(app.handle().clone(), app.state::<system_media::Current>().inner().clone());
             updater::spawn_checker(app.handle().clone());
 
             let (sched_tx, sched_rx) = mpsc::channel();

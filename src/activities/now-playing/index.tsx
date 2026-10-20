@@ -22,7 +22,7 @@ const EXPANDED_BODY = 150;
 /** espaço extra quando o painel de volume está aberto */
 const VOLUME_PANEL = 50;
 
-function Artwork({ url, size, radius }: { url: string; size: number; radius: number }) {
+export function Artwork({ url, size, radius }: { url: string; size: number; radius: number }) {
   return (
     <AnimatePresence initial={false} mode="popLayout">
       <motion.img
@@ -45,13 +45,13 @@ function CompactArt({ np, height }: { np: NowPlayingControls; height: number }) 
   return <Artwork url={np.playback.state.track!.artworkUrl} size={art} radius={6} />;
 }
 
-function CompactEqualizer({
-  np,
+export function CompactEqualizer({
+  playing,
   height,
   color,
   look,
 }: {
-  np: NowPlayingControls;
+  playing: boolean;
   height: number;
   color: string;
   look: EqualizerLook;
@@ -59,7 +59,7 @@ function CompactEqualizer({
   const art = Math.max(16, height - 12);
   // o GIF não pode passar da altura da Island: estourar a linha do grid empurra a capa pra baixo
   const compactLook = { ...look, equalizerGifSize: Math.min(look.equalizerGifSize, Math.max(16, height - 4)) };
-  return <Equalizer playing={np.playback.state.status === "playing"} color={color} height={Math.round(art * 0.6)} look={compactLook} />;
+  return <Equalizer playing={playing} color={color} height={Math.round(art * 0.6)} look={compactLook} />;
 }
 
 type ButtonProps = {
@@ -201,7 +201,7 @@ export function useNowPlayingFeature(settings: Settings): { activity: Activity |
           id: "now-playing",
           compact: ({ height }) => ({
             left: <CompactArt np={np} height={height} />,
-            right: <CompactEqualizer np={np} height={height} color={color} look={settings} />,
+            right: <CompactEqualizer playing height={height} color={color} look={settings} />,
           }),
           theme: palette.theme,
         }

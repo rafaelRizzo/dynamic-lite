@@ -104,3 +104,7 @@ _Avoid_: Media, player, music widget
 **Equalizer**:
 As 4 barras do Now Playing que seguem o áudio do Spotify ao vivo (grave → agudo); sem permissão de áudio, viram animação em loop.
 _Avoid_: Visualizer, spectrum, waveform
+
+**System Audio**:
+Activity opcional, com o Spotify parado: qualquer app tocando mostra o Equalizer no Compact e uma aba com o app e, em abas de navegador reconhecidas (YouTube...), o título e a miniatura; do contrário, uma nota musical.
+_Avoid_: Media, Now Playing

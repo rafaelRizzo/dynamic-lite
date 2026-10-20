@@ -30,6 +30,16 @@ export type PlayerState = {
   repeat: Repeat;
 };
 
+/** O que está tocando fora do Spotify (`system_media.rs`). Só `app` é garantido. */
+export type SystemMedia = {
+  /** app com o áudio (navegador, player...) */
+  app: string;
+  /** aba tocando, em navegador com site reconhecido */
+  title: string | null;
+  site: string | null;
+  artworkUrl: string | null;
+};
+
 export type Repeat = "off" | "context" | "track";
 
 export type Style = "black" | "translucent" | "glass" | "themed";
@@ -45,6 +55,8 @@ export type Settings = {
   hideIdleWithoutNotch: boolean;
   accent: "artwork" | "white";
   equalizerStyle: "bars" | "gif";
+  /** com o Spotify parado, equalizer e Island seguem o áudio de qualquer app */
+  systemAudio: boolean;
   /** lado do GIF em px */
   equalizerGifSize: number;
   /** tamanho do GIF salvo, 0 = nenhum. Só o Rust escreve */
@@ -244,8 +256,13 @@ export const native = {
   equalizerGifPick: () => invoke<boolean>("equalizer_gif_pick"),
   equalizerGifRemove: () => invoke<void>("equalizer_gif_remove"),
   equalizerGifRead: () => invoke<ArrayBuffer>("equalizer_gif_read"),
+  /** Há som audível no sistema (só com `systemAudio` ligado e o Spotify parado). */
+  equalizerSystemActive: () => invoke<boolean>("equalizer_system_active"),
+  onSystemAudio: on<boolean>("equalizer://system"),
+  systemMedia: () => invoke<SystemMedia | null>("system_media"),
+  onSystemMedia: on<SystemMedia | null>("equalizer://media"),
   /** Equalizer ao vivo: 4 bandas 0-1 (grave → agudo), na taxa de `equalizerFps` enquanto toca. Não chega sem permissão/macOS < 14.2. */
-  onLevels: on<number[]>("spotify://levels"),
+  onLevels: on<number[]>("equalizer://levels"),
   onSettings: on<Settings>("settings://changed"),
   onPomodoro: on<PomodoroState>("pomodoro://state"),
   onReminders: on<Reminder[]>("reminders://changed"),
