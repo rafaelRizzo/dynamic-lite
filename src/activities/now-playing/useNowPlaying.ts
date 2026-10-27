@@ -6,6 +6,9 @@ export type Playback = { state: PlayerState; receivedAt: number };
 /** Volume restaurado ao desmutar quando não há um anterior conhecido. */
 const DEFAULT_VOLUME = 50;
 
+/** Após mexer no volume, leituras do Spotify (ainda com o valor antigo) não sobrescrevem o valor local. */
+const VOLUME_HOLD_MS = 1500;
+
 /** Mesma ordem do botão do Spotify: desligado → repetir tudo → repetir faixa. */
 const NEXT_REPEAT: Record<Repeat, Repeat> = { off: "context", context: "track", track: "off" };
 
@@ -24,9 +27,17 @@ export function useNowPlaying() {
   stateRef.current = playback.state;
   // o Spotify não tem mute: mutar é volume 0, lembrando o anterior pra voltar
   const beforeMute = useRef(DEFAULT_VOLUME);
+  // comandos de volume em série (osascript concorrentes terminam fora de ordem), só o último valor importa
+  const volumeHold = useRef(0);
+  const volumeSend = useRef<{ busy: boolean; next: number | null }>({ busy: false, next: null });
 
   useEffect(() => {
-    const receive = (state: PlayerState) => setPlayback({ state, receivedAt: Date.now() });
+    const receive = (incoming: PlayerState) =>
+      setPlayback((p) => {
+        const held = Date.now() < volumeHold.current;
+        const state = held ? { ...incoming, volume: p.state.volume } : incoming;
+        return { state, receivedAt: Date.now() };
+      });
     native.spotifyState().then(receive);
     return subscribe(native.onSpotify(receive));
   }, []);
@@ -49,8 +60,25 @@ export function useNowPlaying() {
   const setVolume = useCallback((volume: number) => {
     const v = Math.round(Math.min(100, Math.max(0, volume)));
     if (v > 0) beforeMute.current = v;
+    volumeHold.current = Date.now() + VOLUME_HOLD_MS;
     setPlayback((p) => ({ ...p, state: { ...p.state, volume: v } }));
-    native.spotifyVolume(v);
+    const send = volumeSend.current;
+    if (send.busy) {
+      send.next = v;
+      return;
+    }
+    send.busy = true;
+    const run = (value: number) =>
+      native
+        .spotifyVolume(value)
+        .catch(() => {})
+        .finally(() => {
+          const pending = send.next;
+          send.next = null;
+          if (pending === null) send.busy = false;
+          else run(pending);
+        });
+    run(v);
   }, []);
 
   const toggleMute = useCallback(() => {

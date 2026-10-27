@@ -26,16 +26,16 @@ const VOLUME_PANEL = 50;
 
 export function Artwork({ url, size, radius }: { url: string; size: number; radius: number }) {
   return (
-    <AnimatePresence initial={false} mode="popLayout">
+    <AnimatePresence initial={false} mode="wait">
       <motion.img
         key={url}
         src={url}
         className="np-art"
-        style={{ width: size, height: size, borderRadius: radius }}
-        initial={{ opacity: 0, scale: 0.85, filter: "blur(6px)" }}
-        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-        exit={{ opacity: 0, scale: 0.85, filter: "blur(6px)" }}
-        transition={{ duration: 0.3 }}
+        style={{ width: size, height: size, borderRadius: radius, transformPerspective: 600 }}
+        initial={{ rotateY: -90, opacity: 0 }}
+        animate={{ rotateY: 0, opacity: 1 }}
+        exit={{ rotateY: 90, opacity: 0 }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
         draggable={false}
       />
     </AnimatePresence>
@@ -129,8 +129,8 @@ function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: Expa
           <Artwork url={track.artworkUrl} size={ART_EXPANDED} radius={12} />
         </motion.button>
         <div className="np-meta">
-          <div className="np-title" data-tip={track.name} data-tip-overflow>{track.name}</div>
-          <div className="np-artist" data-tip={track.artist} data-tip-overflow>{track.artist}</div>
+          <div className="np-title" data-tip={track.name} data-tip-side="bottom" data-tip-overflow>{track.name}</div>
+          <div className="np-artist" data-tip={track.artist} data-tip-side="bottom" data-tip-overflow>{track.artist}</div>
         </div>
         <Equalizer playing={playing} color={color} height={18} look={expandedLook} />
       </div>

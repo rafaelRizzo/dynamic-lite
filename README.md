@@ -172,6 +172,12 @@ base64 -i signing.p12 | gh secret set SIGNING_CERT_P12 --env release
 gh secret set SIGNING_CERT_PASSWORD --env release < password.txt
 ```
 
+Pro build local (`bun run tauri build`) também assinar com esse certificado, importe o `.p12` no Keychain uma vez; o `scripts/tauri.sh` detecta e usa. Sem ele o build sai ad-hoc e o macOS pede tudo a cada build:
+
+```bash
+security import ~/.dynamic-lite-signing/signing.p12 -k ~/Library/Keychains/login.keychain-db -P "$(cat ~/.dynamic-lite-signing/password.txt)" -T /usr/bin/codesign
+```
+
 Guarde o `.p12` e a senha em lugar seguro: com outro certificado a identidade muda, e as permissões são pedidas de novo uma vez. Use o `/usr/bin/openssl` (LibreSSL); o OpenSSL 3 gera um `.p12` que o `security import` do macOS não lê.
 
 ## Problemas comuns

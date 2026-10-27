@@ -50,8 +50,8 @@ function Expanded({ media, topInset, look, color }: { media: SystemMedia | null;
       <div className="np-head">
         {media?.artworkUrl ? <Artwork url={media.artworkUrl} size={ART_EXPANDED} radius={14} /> : <NoteBadge size={ART_EXPANDED} />}
         <div className="np-meta">
-          <div className="np-title" data-tip={title} data-tip-overflow>{title}</div>
-          <div className="np-artist" data-tip={subtitle} data-tip-overflow>{subtitle}</div>
+          <div className="np-title" data-tip={title} data-tip-side="bottom" data-tip-overflow>{title}</div>
+          <div className="np-artist" data-tip={subtitle} data-tip-side="bottom" data-tip-overflow>{subtitle}</div>
         </div>
         <Equalizer playing color={color} height={EQUALIZER_HEIGHT} look={expandedLook} />
       </div>
