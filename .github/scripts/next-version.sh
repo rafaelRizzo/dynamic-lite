@@ -70,19 +70,12 @@ notes=$(
   cat <<'MD'
 ### Instalação
 
-**macOS** (só Apple Silicon)
-
-1. Baixe o `.dmg` abaixo, abra e arraste **Dynamic Lite** pra **Aplicativos**.
+1. Baixe o `.dmg` abaixo (só Apple Silicon), abra e arraste **Dynamic Lite** pra **Aplicativos**.
 2. O app não é assinado pela Apple. Na primeira vez, rode no Terminal:
    ```bash
    xattr -cr "/Applications/Dynamic Lite.app"
    ```
 3. Abra o app e aceite a permissão de **Automação → Spotify**.
-
-**Windows** (10/11, 64 bits)
-
-1. Baixe o `-setup.exe` abaixo e execute.
-2. O instalador não é assinado: se o SmartScreen avisar, clique em **Mais informações → Executar assim mesmo**.
 MD
 )
 

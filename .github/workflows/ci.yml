@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   check:
-    name: Typecheck e build (macOS)
+    name: Typecheck e build
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -43,34 +43,3 @@ jobs:
 
       - name: Prévia da versão
         run: .github/scripts/next-version.sh | tee -a "$GITHUB_STEP_SUMMARY"
-
-  check-windows:
-    name: Typecheck, build e testes (Windows)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-
-      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
-
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
-        with:
-          workspaces: windows/src-tauri
-          cache-on-failure: true
-
-      - name: Instalar dependências
-        working-directory: windows
-        run: bun install --frozen-lockfile
-
-      - name: Typecheck e build do frontend
-        working-directory: windows
-        run: bun run build
-
-      - name: Checar o Rust
-        working-directory: windows/src-tauri
-        run: cargo check --locked
-
-      - name: Testes do Rust
-        working-directory: windows/src-tauri
-        run: cargo test --locked
