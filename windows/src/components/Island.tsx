@@ -8,6 +8,8 @@ type Mode = "idle" | "compact" | "expanded";
 
 /** Mola com leve overshoot: a forma "escorre" e assenta, em vez de só redimensionar. */
 const LIQUID: Transition = { type: "spring", stiffness: 560, damping: 31, mass: 0.9 };
+/** Ao fechar a mola não pode passar do alvo: o overshoot espremia a ilha abaixo do Notch e ela "quicava" de volta. Amortecimento crítico (2·√(k·m) ≈ 45). */
+const CLOSE: Transition = { type: "spring", stiffness: 560, damping: 46, mass: 0.9 };
 const CONTENT: Transition = { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] };
 
 /** Troca de aba: o conteúdo novo entra pelo lado pra onde a aba está, o antigo sai pro outro. */
@@ -239,17 +241,17 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
         style={islandVars}
         initial={false}
         animate={{ width: pill.width, height: pill.height }}
-        transition={LIQUID}
+        transition={mode === "expanded" ? LIQUID : CLOSE}
         onClick={() => settings.expandOn === "click" && panel && setClicked(true)}
       >
-        <motion.span className="ear ear-left" initial={false} animate={{ width: pill.ear, height: pill.ear }} transition={LIQUID} />
-        <motion.span className="ear ear-right" initial={false} animate={{ width: pill.ear, height: pill.ear }} transition={LIQUID} />
+        <motion.span className="ear ear-left" initial={false} animate={{ width: pill.ear, height: pill.ear }} transition={mode === "expanded" ? LIQUID : CLOSE} />
+        <motion.span className="ear ear-right" initial={false} animate={{ width: pill.ear, height: pill.ear }} transition={mode === "expanded" ? LIQUID : CLOSE} />
         <motion.div
           className="island"
           data-ink={theme?.ink ?? "light"}
           initial={false}
           animate={{ borderBottomLeftRadius: pill.radius, borderBottomRightRadius: pill.radius }}
-          transition={LIQUID}
+          transition={mode === "expanded" ? LIQUID : CLOSE}
         >
           <AnimatePresence initial={false}>
             {pillContent && (
