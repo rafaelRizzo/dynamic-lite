@@ -4,6 +4,9 @@
 # APP_VERSION no ambiente tem prioridade: o CI usa pra lançar a versão nova antes da tag existir.
 # Sem tag e sem APP_VERSION, vale a versão do tauri.conf.json.
 #
+# Build local assina com o certificado "Dynamic Lite Signing" se ele estiver no Keychain (ver "Assinatura" no README).
+# Sem ele o build sai ad-hoc ("-"): identidade = hash do binário, e o macOS pede todas as permissões a cada build.
+#
 # Os artefatos de atualização automática precisam da chave privada: no build local usa
 # ~/.tauri/dynamic-lite.key (+ .password) se existir; senão desliga esses artefatos.
 set -euo pipefail
@@ -16,9 +19,17 @@ case "${1:-}" in
     cmd="$1"
     shift
     overrides=()
+    bundle=() # pedaços do "bundle": duas chaves "bundle" no JSON se sobrescreveriam
     if [[ -n "$version" ]]; then
       echo "Dynamic Lite v$version" >&2
       overrides+=("\"version\":\"$version\"")
+    fi
+    if [[ "$cmd" == build ]]; then
+      if security find-identity -p codesigning 2>/dev/null | grep -q '"Dynamic Lite Signing"'; then
+        bundle+=('"macOS":{"signingIdentity":"Dynamic Lite Signing"}')
+      else
+        echo 'Sem o certificado "Dynamic Lite Signing" no Keychain: build ad-hoc, o macOS vai pedir as permissões de novo' >&2
+      fi
     fi
     if [[ "$cmd" == build && -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
       if [[ -f "$KEY" ]]; then
@@ -27,8 +38,11 @@ case "${1:-}" in
         export TAURI_SIGNING_PRIVATE_KEY_PASSWORD
       else
         echo "Sem $KEY: build sem artefatos de atualização automática" >&2
-        overrides+=('"bundle":{"createUpdaterArtifacts":false}')
+        bundle+=('"createUpdaterArtifacts":false')
       fi
+    fi
+    if ((${#bundle[@]})); then
+      overrides+=("\"bundle\":{$(IFS=,; echo "${bundle[*]}")}")
     fi
     if ((${#overrides[@]})); then
       exec tauri "$cmd" --config "{$(IFS=,; echo "${overrides[*]}")}" "$@"
