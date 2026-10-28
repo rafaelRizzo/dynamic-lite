@@ -1,6 +1,7 @@
 #[cfg(not(windows))]
 compile_error!("Esta variante do Dynamic Lite só roda no Windows");
 
+mod bluetooth;
 mod calendar;
 mod claude_usage;
 mod equalizer;
@@ -206,6 +207,7 @@ pub fn run() {
             scheduler::reminders_snooze,
             scheduler::reminders_done,
             claude_usage::claude_usage,
+            bluetooth::bluetooth_batteries,
             calendar::calendar_access,
             calendar::calendar_request_access,
             calendar::calendar_events,

@@ -1,5 +1,6 @@
 import type { Settings } from "../lib/native";
 import { useAgendaPanel } from "../panels/agenda";
+import { useBluetoothPanel } from "../panels/bluetooth";
 import { useClaudePanel } from "../panels/claude";
 import { usePomodoroFeature } from "../panels/pomodoro";
 import { useShortcutsPanel } from "../panels/shortcuts";
@@ -19,9 +20,10 @@ export function useIslandContent(settings: Settings, updateSettings: (patch: Par
   const pomodoro = usePomodoroFeature(settings, updateSettings);
   const agenda = useAgendaPanel(settings);
   const claude = useClaudePanel(settings);
+  const bluetooth = useBluetoothPanel(settings);
   const shortcuts = useShortcutsPanel(settings);
   return {
     activities: [pomodoro.activity, nowPlaying.activity, systemAudio.activity, update.activity].filter((a): a is Activity => a !== null),
-    panels: [nowPlaying.panel, systemAudio.panel, agenda, pomodoro.panel, claude, shortcuts, update.panel].filter((p): p is Panel => p !== null),
+    panels: [nowPlaying.panel, systemAudio.panel, agenda, pomodoro.panel, claude, bluetooth, shortcuts, update.panel].filter((p): p is Panel => p !== null),
   };
 }

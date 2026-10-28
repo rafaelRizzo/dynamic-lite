@@ -49,3 +49,9 @@ export const UpdateTabIcon = () => (
     <path d="M12 17V7M7.5 11.5 12 7l4.5 4.5" />
   </Icon>
 );
+
+export const BluetoothIcon = () => (
+  <Icon>
+    <path d="M7.5 7.5 16.5 16.5 12 21V3l4.5 4.5-9 9" />
+  </Icon>
+);
