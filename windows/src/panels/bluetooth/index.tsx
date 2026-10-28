@@ -68,22 +68,22 @@ function Expanded({ topInset }: { topInset: number }) {
     return () => clearInterval(id);
   }, []);
 
-  // sem bateria e desconectado não diz nada: só aparecem os que informam nível ou estão conectados
-  const shown = (devices ?? []).filter((d) => d.battery != null || d.connected).slice(0, 4);
+  // sem nível de bateria não há o que mostrar: só aparecem os que informam
+  const shown = (devices ?? []).filter((d): d is BluetoothBattery & { battery: number } => d.battery != null).slice(0, 4);
 
   return (
     <div className="bt-expanded" style={{ paddingTop: topInset }}>
       {!devices ? (
         <div className="bt-empty">{failed ? "Não consegui ler o Bluetooth" : "Procurando dispositivos…"}</div>
       ) : shown.length === 0 ? (
-        <div className="bt-empty">Nenhum dispositivo Bluetooth conectado</div>
+        <div className="bt-empty">Nenhum dispositivo Bluetooth com bateria</div>
       ) : (
         <div className="bt-cols">
           {shown.map((d) => (
             <div key={d.id} className="bt-device" data-connected={d.connected}>
               <Ring device={d} />
               <div className="bt-name" data-tip={d.name}>{d.name}</div>
-              <div className="bt-sub">{d.battery == null ? "sem bateria" : d.battery < LOW ? "bateria baixa" : d.connected ? "conectado" : "desconectado"}</div>
+              <div className="bt-sub">{d.battery < LOW ? "bateria baixa" : d.connected ? "conectado" : "desconectado"}</div>
             </div>
           ))}
         </div>

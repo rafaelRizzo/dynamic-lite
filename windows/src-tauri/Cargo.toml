@@ -29,6 +29,7 @@ windows-collections = "0.3"
 windows = { version = "0.62", features = [
   "Devices_Bluetooth",
   "Devices_Enumeration",
+  "Devices_Enumeration_Pnp",
   "Foundation",
   "Foundation_Collections",
   "Media_Control",
