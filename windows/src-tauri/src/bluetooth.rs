@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 use windows::core::{Interface, HSTRING};
-use windows::Devices::Bluetooth::{BluetoothDevice, BluetoothLEDevice};
+use windows::Devices::Bluetooth::{BluetoothConnectionStatus, BluetoothDevice, BluetoothLEDevice};
 use windows::Devices::Enumeration::Pnp::{PnpObject, PnpObjectType};
 use windows::Devices::Enumeration::DeviceInformation;
 use windows::Foundation::IReference;
@@ -59,7 +59,7 @@ fn mac_of_pnp(id: &str) -> Option<String> {
     is_hex(&mac).then_some(mac)
 }
 
-/// Nível de bateria por endereço, só dos nós presentes (conectados agora).
+/// Nível de bateria por endereço (nós presentes); só vale para aparelho conectado.
 fn batteries() -> HashMap<String, u8> {
     let props = IIterable::<HSTRING>::from(vec![HSTRING::from(BATTERY_KEY), HSTRING::from(PRESENT_KEY)]);
     let filter = HSTRING::from("System.Devices.DeviceInstanceId:~~\"BTH\"");
@@ -79,13 +79,23 @@ fn batteries() -> HashMap<String, u8> {
     out
 }
 
+/// Estado real da conexão. `System.Devices.Aep.IsConnected` fica verdadeiro para aparelho só pareado e ausente.
+fn is_connected(id: &HSTRING, le: bool) -> Option<bool> {
+    let status = if le {
+        BluetoothLEDevice::FromIdAsync(id).ok()?.join().ok()?.ConnectionStatus().ok()?
+    } else {
+        BluetoothDevice::FromIdAsync(id).ok()?.join().ok()?.ConnectionStatus().ok()?
+    };
+    Some(status == BluetoothConnectionStatus::Connected)
+}
+
 /// Dispositivos pareados (clássicos e LE): `(endereço, nome, conectado)`.
 fn paired() -> Vec<(String, String, bool)> {
     let props = IIterable::<HSTRING>::from(vec![HSTRING::from(CONNECTED_KEY)]);
     let mut out = Vec::new();
-    for selector in [
-        BluetoothDevice::GetDeviceSelectorFromPairingState(true),
-        BluetoothLEDevice::GetDeviceSelectorFromPairingState(true),
+    for (le, selector) in [
+        (false, BluetoothDevice::GetDeviceSelectorFromPairingState(true)),
+        (true, BluetoothLEDevice::GetDeviceSelectorFromPairingState(true)),
     ] {
         let Ok(selector) = selector else { continue };
         let Ok(op) = DeviceInformation::FindAllAsyncAqsFilterAndAdditionalProperties(&selector, &props) else { continue };
@@ -95,7 +105,8 @@ fn paired() -> Vec<(String, String, bool)> {
             let name = name.to_string();
             let Some(mac) = mac_of_paired(&id.to_string()) else { continue };
             if !name.trim().is_empty() {
-                out.push((mac, name, lookup::<bool>(&map, CONNECTED_KEY).unwrap_or(false)));
+                let connected = is_connected(&id, le).unwrap_or_else(|| lookup::<bool>(&map, CONNECTED_KEY).unwrap_or(false));
+                out.push((mac, name, connected));
             }
         }
     }
@@ -108,12 +119,15 @@ pub fn read() -> Vec<BluetoothBattery> {
     let levels = batteries();
     let mut all: Vec<BluetoothBattery> = Vec::new();
     for (mac, name, connected) in paired() {
-        let battery = levels.get(&mac).copied();
-        // o mesmo aparelho vem pelos dois protocolos; um nó presente com bateria também prova que está conectado
+        // o mesmo aparelho vem pelos dois protocolos: conectado se qualquer um disser que sim
         match all.iter_mut().find(|d| d.id == mac) {
-            Some(existing) => existing.connected |= connected || battery.is_some(),
-            None => all.push(BluetoothBattery { id: mac, name, battery, connected: connected || battery.is_some() }),
+            Some(existing) => existing.connected |= connected,
+            None => all.push(BluetoothBattery { id: mac, name, battery: None, connected }),
         }
+    }
+    // nó PnP guarda o último nível mesmo com o aparelho desligado: só conta se está conectado
+    for d in all.iter_mut().filter(|d| d.connected) {
+        d.battery = levels.get(&d.id).copied();
     }
     all.sort_by(|a, b| b.connected.cmp(&a.connected).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
     all

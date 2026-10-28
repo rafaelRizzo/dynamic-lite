@@ -5,7 +5,7 @@ import { BluetoothIcon } from "../icons";
 
 const WIDTH = 400;
 const HEIGHT = 150;
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 10_000;
 const RING = 56;
 const STROKE = 5;
 /** Abaixo disso o anel fica vermelho; abaixo de `WARN`, âmbar. */
@@ -68,22 +68,22 @@ function Expanded({ topInset }: { topInset: number }) {
     return () => clearInterval(id);
   }, []);
 
-  // sem nível de bateria não há o que mostrar: só aparecem os que informam
-  const shown = (devices ?? []).filter((d): d is BluetoothBattery & { battery: number } => d.battery != null).slice(0, 4);
+  // só conectados; sem informar bateria o anel fica "--"
+  const shown = (devices ?? []).filter((d) => d.connected).slice(0, 4);
 
   return (
     <div className="bt-expanded" style={{ paddingTop: topInset }}>
       {!devices ? (
         <div className="bt-empty">{failed ? "Não consegui ler o Bluetooth" : "Procurando dispositivos…"}</div>
       ) : shown.length === 0 ? (
-        <div className="bt-empty">Nenhum dispositivo Bluetooth com bateria</div>
+        <div className="bt-empty">Nenhum dispositivo Bluetooth conectado</div>
       ) : (
         <div className="bt-cols">
           {shown.map((d) => (
             <div key={d.id} className="bt-device" data-connected={d.connected}>
               <Ring device={d} />
               <div className="bt-name" data-tip={d.name}>{d.name}</div>
-              <div className="bt-sub">{d.battery < LOW ? "bateria baixa" : d.connected ? "conectado" : "desconectado"}</div>
+              <div className="bt-sub">{d.battery != null && d.battery < LOW ? "bateria baixa" : d.connected ? "conectado" : "desconectado"}</div>
             </div>
           ))}
         </div>
