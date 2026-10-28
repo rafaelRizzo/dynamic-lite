@@ -133,7 +133,7 @@ impl Default for Settings {
             display: "auto".into(),
             all_spaces: true,
             hide_in_mission_control: true,
-            auto_update: false,
+            auto_update: true,
             show_claude_usage: true,
             claude_live_limits: true,
             show_agenda: true,
