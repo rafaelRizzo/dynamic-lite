@@ -95,6 +95,7 @@ export type Settings = {
   sfx: string;
   /** 0.1-1 */
   sfxVolume: number;
+  showBluetooth: boolean;
   showShortcuts: boolean;
   /** ids de `panels/shortcuts/catalog.ts`, na ordem da grade */
   shortcuts: string[];
@@ -184,6 +185,9 @@ export type ClaudeUsage = {
   block: { start: number; end: number; totals: UsageTotals } | null;
 };
 
+/** Dispositivo Bluetooth pareado; `battery` 0-100, null se ele não informa. */
+export type BluetoothBattery = { id: string; name: string; battery: number | null; connected: boolean };
+
 export type UpdateInfo = { version: string; currentVersion: string; notes: string | null };
 
 export type Platform = {
@@ -243,6 +247,7 @@ export const native = {
   calendarRequestAccess: () => invoke<CalendarAccess>("calendar_request_access"),
   calendarEvents: (start: number, end: number) => invoke<CalendarEvent[]>("calendar_events", { start, end }),
   /** `dayStart`: meia-noite local, epoch ms */
+  bluetoothBatteries: () => invoke<BluetoothBattery[]>("bluetooth_batteries"),
   claudeUsage: (dayStart: number) => invoke<ClaudeUsage>("claude_usage", { dayStart }),
   listSounds: () => invoke<string[]>("list_sounds"),
   playSound: (name: string, volume: number) => invoke<void>("play_sound", { name, volume }),

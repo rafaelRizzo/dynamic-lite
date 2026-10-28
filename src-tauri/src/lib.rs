@@ -1,6 +1,7 @@
 #[cfg(not(target_os = "macos"))]
 compile_error!("Dynamic Lite só roda no macOS");
 
+mod bluetooth;
 mod calendar;
 mod claude_usage;
 mod equalizer;
@@ -227,6 +228,7 @@ pub fn run() {
             scheduler::reminders_snooze,
             scheduler::reminders_done,
             claude_usage::claude_usage,
+            bluetooth::bluetooth_batteries,
             calendar::calendar_access,
             calendar::calendar_request_access,
             calendar::calendar_events,

@@ -1166,3 +1166,78 @@ body,
 .tip[data-open="true"][data-glide="true"] {
   transition: opacity 0.14s ease, transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2), left 0.16s ease-out, top 0.16s ease-out;
 }
+
+/* ---------- Bateria Bluetooth ---------- */
+
+.bt-expanded {
+  height: 100%;
+  box-sizing: border-box;
+  padding-inline: 20px;
+  padding-bottom: 14px;
+  display: flex;
+}
+.bt-cols {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.bt-device {
+  flex: 1;
+  max-width: 110px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: 14px;
+  background: var(--fill-1);
+}
+.bt-device[data-connected="false"] {
+  opacity: 0.55;
+}
+.bt-ring {
+  color: rgb(48 209 88);
+}
+.bt-ring[data-level="warn"] {
+  color: rgb(255 179 64);
+}
+.bt-ring[data-level="low"] {
+  color: rgb(255 69 58);
+}
+.bt-ring[data-level="none"] {
+  color: var(--text-dim);
+}
+.bt-ring-arc {
+  transition: stroke-dashoffset 0.4s ease, color 0.2s;
+}
+.bt-pct {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bt-ring[data-level="low"] .bt-pct {
+  fill: rgb(255 69 58);
+}
+.bt-name {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  font-weight: 500;
+}
+.bt-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.bt-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}

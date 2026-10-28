@@ -101,6 +101,7 @@ pub struct Settings {
     pub sfx: String,
     /// 0.1-1.0
     pub sfx_volume: f64,
+    pub show_bluetooth: bool,
     pub show_shortcuts: bool,
     /// ids do catálogo de atalhos do frontend, na ordem da grade
     pub shortcuts: Vec<String>,
@@ -145,6 +146,7 @@ impl Default for Settings {
             auto_start_next: false,
             sfx: crate::sound::DEFAULT.into(),
             sfx_volume: 0.8,
+            show_bluetooth: true,
             show_shortcuts: false,
             shortcuts: ["wifi", "bluetooth", "sound", "battery", "displays", "notifications"]
                 .map(String::from)

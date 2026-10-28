@@ -317,6 +317,12 @@ export function SettingsApp() {
         </Row>
       </Section>
 
+      <Section title="Bluetooth">
+        <Row label="Aba de bateria Bluetooth" hint="Nível de fones, mouse e teclado conectados. Vermelho abaixo de 20%">
+          <Toggle checked={settings.showBluetooth} onChange={(showBluetooth) => update({ showBluetooth })} />
+        </Row>
+      </Section>
+
       <Section title="Atalhos">
         <Row label="Aba de atalhos" hint="Abre painéis dos Ajustes do Sistema">
           <Toggle checked={settings.showShortcuts} onChange={(showShortcuts) => update({ showShortcuts })} />
