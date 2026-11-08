@@ -123,6 +123,11 @@ pub fn mouse_location() -> (f64, f64) {
     (p.x, p.y)
 }
 
+/// O botão esquerdo do mouse está apertado agora (bit 0 de `pressedMouseButtons`).
+pub fn left_button_down() -> bool {
+    NSEvent::pressedMouseButtons() & 1 != 0
+}
+
 pub fn is_app_running(bundle_id: &str) -> bool {
     let id = NSString::from_str(bundle_id);
     NSRunningApplication::runningApplicationsWithBundleIdentifier(&id)

@@ -306,6 +306,47 @@ export function SettingsApp() {
         </Row>
       </Section>
 
+      <Section title="Letra">
+        <Row label="Botão de letra no player" hint="Letra sincronizada da música do Spotify, linha a linha">
+          <Toggle checked={settings.showLyrics} onChange={(showLyrics) => update({ showLyrics })} />
+        </Row>
+        {settings.showLyrics && (
+          <Row label="Ajuste de sincronia" hint="Se a letra chega tarde, aumente; se chega cedo, diminua">
+            <Range
+              value={Math.round(settings.lyricsOffsetMs / 100)}
+              min={-30}
+              max={30}
+              step={1}
+              format={(v) => `${v > 0 ? "+" : ""}${(v / 10).toFixed(1)} s`}
+              onChange={(v) => update({ lyricsOffsetMs: v * 100 })}
+            />
+          </Row>
+        )}
+        {settings.showLyrics && (
+          <Note>
+            A letra vem do LRCLIB (lrclib.net). Ao abrir o painel de letra, o título, o artista e o álbum da faixa são
+            enviados a esse serviço. Nem toda música tem letra, e algumas não têm versão sincronizada.
+          </Note>
+        )}
+      </Section>
+
+      <Section title="Arquivos">
+        <Row label="Aba de arquivos" hint="Prateleira pra guardar arquivos e prints, e conversor de áudio">
+          <Toggle checked={settings.showFiles} onChange={(showFiles) => update({ showFiles })} />
+        </Row>
+        {settings.showFiles && (
+          <>
+            <Row label="Som ao terminar a conversão" hint="Usa o mesmo som e volume do Pomodoro">
+              <Toggle checked={settings.convertSound} onChange={(convertSound) => update({ convertSound })} />
+            </Row>
+            <Note>
+              Os itens ficam guardados numa pasta do app, sem limite de tamanho nem de tempo, até você removê-los. O
+              conversor roda no seu computador: nenhum arquivo é enviado pra fora.
+            </Note>
+          </>
+        )}
+      </Section>
+
       <Section title="Bluetooth">
         <Row label="Aba de bateria Bluetooth" hint="Nível de fones, mouse e teclado conectados. Vermelho abaixo de 20%">
           <Toggle checked={settings.showBluetooth} onChange={(showBluetooth) => update({ showBluetooth })} />

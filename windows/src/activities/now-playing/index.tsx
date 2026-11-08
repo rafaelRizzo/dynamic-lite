@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useArtworkColor } from "../../hooks/useArtworkColor";
 import { native, type Settings } from "../../lib/native";
 import { MusicIcon } from "../../panels/icons";
 import type { Activity, Panel } from "../types";
 import { Equalizer, type EqualizerLook } from "./Equalizer";
-import { NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, RepeatOneIcon, ShuffleIcon } from "./Icons";
+import { LyricsIcon, NextIcon, PauseIcon, PlayIcon, PrevIcon, RepeatIcon, RepeatOneIcon, ShuffleIcon } from "./Icons";
+import { LyricsSide } from "./Lyrics";
 import { Progress } from "./Progress";
 import { VolumeIcon, VolumePanel } from "./Volume";
 import { useNowPlaying, type NowPlayingControls } from "./useNowPlaying";
@@ -23,6 +24,26 @@ const GIF_EXPANDED_SCALE = 2;
 const EXPANDED_BODY = 150;
 /** espaço extra quando o painel de volume está aberto */
 const VOLUME_PANEL = 50;
+/** largura da coluna de letra, à direita do player, enquanto ela está aberta */
+const LYRICS_WIDTH = 320;
+const LYRICS_KEY = "np-lyrics-open";
+
+/** O painel de letra lembra se estava aberto, inclusive depois de reiniciar o app. */
+function loadLyricsOpen(): boolean {
+  try {
+    return localStorage.getItem(LYRICS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveLyricsOpen(open: boolean) {
+  try {
+    localStorage.setItem(LYRICS_KEY, open ? "1" : "0");
+  } catch {
+    // sem storage: só não lembra
+  }
+}
 
 export function Artwork({ url, size, radius }: { url: string; size: number; radius: number }) {
   return (
@@ -101,12 +122,19 @@ type ExpandedProps = {
   np: NowPlayingControls;
   topInset: number;
   color: string;
+  /** cor da capa, sempre (a letra ignora o estilo e o destaque branco) */
+  lyricsColor: string;
   look: EqualizerLook;
   volumeOpen: boolean;
   setVolumeOpen: (open: boolean) => void;
+  /** botão de letra disponível (opção dos Ajustes) */
+  showLyrics: boolean;
+  offsetMs: number;
+  lyricsOpen: boolean;
+  setLyricsOpen: (open: boolean) => void;
 };
 
-function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: ExpandedProps) {
+function Expanded({ np, topInset, color, lyricsColor, look, volumeOpen, setVolumeOpen, showLyrics, offsetMs, lyricsOpen, setLyricsOpen }: ExpandedProps) {
   const { state } = np.playback;
   const track = state.track!;
   const playing = state.status === "playing";
@@ -115,6 +143,7 @@ function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: Expa
   // a Island fechou: na próxima abertura o painel de volume começa recolhido
   useEffect(() => () => setVolumeOpen(false), [setVolumeOpen]);
   return (
+    <div className="np-split">
     <div className="np-expanded" style={{ paddingTop: topInset }}>
       <div className="np-head">
         <motion.button
@@ -139,9 +168,16 @@ function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: Expa
         color={color}
         onSeek={np.seek}
         trailing={
-          <Button onClick={() => setVolumeOpen(!volumeOpen)} active={volumeOpen} small label={volumeOpen ? "Fechar volume" : "Volume do Spotify no mixer do Windows"}>
-            <VolumeIcon volume={state.volume} size={16} />
-          </Button>
+          <>
+            {showLyrics && (
+              <Button onClick={() => setLyricsOpen(!lyricsOpen)} active={lyricsOpen} small label={lyricsOpen ? "Fechar letra" : "Letra"}>
+                <LyricsIcon size={16} />
+              </Button>
+            )}
+            <Button onClick={() => setVolumeOpen(!volumeOpen)} active={volumeOpen} small label={volumeOpen ? "Fechar volume" : "Volume do Spotify no mixer do Windows"}>
+              <VolumeIcon volume={state.volume} size={16} />
+            </Button>
+          </>
         }
       />
       <div className="np-controls">
@@ -169,6 +205,8 @@ function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: Expa
         </Button>
       </div>
       <AnimatePresence initial={false}>
+      </AnimatePresence>
+      <AnimatePresence initial={false}>
         {volumeOpen && (
           <VolumePanel
             key="volume"
@@ -180,6 +218,12 @@ function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: Expa
         )}
       </AnimatePresence>
     </div>
+    <AnimatePresence initial={false}>
+      {showLyrics && lyricsOpen && (
+        <LyricsSide key="lyrics" playback={np.playback} track={track} color={lyricsColor} offsetMs={offsetMs} onSeek={np.seek} width={LYRICS_WIDTH} />
+      )}
+    </AnimatePresence>
+    </div>
   );
 }
 
@@ -187,6 +231,11 @@ function Expanded({ np, topInset, color, look, volumeOpen, setVolumeOpen }: Expa
 export function useNowPlayingFeature(settings: Settings): { activity: Activity | null; panel: Panel | null } {
   const np = useNowPlaying();
   const [volumeOpen, setVolumeOpen] = useState(false);
+  const [lyricsOpen, setLyricsOpenState] = useState(loadLyricsOpen);
+  const setLyricsOpen = useCallback((open: boolean) => {
+    setLyricsOpenState(open);
+    saveLyricsOpen(open);
+  }, []);
   const { state } = np.playback;
   const palette = useArtworkColor(state.track?.artworkUrl);
   // no Themed o fundo já é a cor da capa: o destaque segue o texto pra manter contraste
@@ -213,10 +262,24 @@ export function useNowPlayingFeature(settings: Settings): { activity: Activity |
     label: "Música",
     icon: <MusicIcon />,
     expanded: ({ topInset }) => (
-      <Expanded np={np} topInset={topInset} color={color} look={settings} volumeOpen={volumeOpen} setVolumeOpen={setVolumeOpen} />
+      <Expanded
+        np={np}
+        topInset={topInset}
+        color={color}
+        lyricsColor={palette.accent}
+        look={settings}
+        volumeOpen={volumeOpen}
+        setVolumeOpen={setVolumeOpen}
+        showLyrics={settings.showLyrics}
+        offsetMs={settings.lyricsOffsetMs}
+        lyricsOpen={lyricsOpen}
+        setLyricsOpen={setLyricsOpen}
+      />
     ),
     // a Island "escorre" pra baixo quando o painel de volume abre
     expandedSize: { width: EXPANDED_WIDTH, height: EXPANDED_BODY + (volumeOpen ? VOLUME_PANEL : 0) },
+    // a letra abre à direita do player: a ilha cresce na largura, não na altura
+    extraWidth: settings.showLyrics && lyricsOpen ? LYRICS_WIDTH : 0,
     theme: palette.theme,
   };
   return { activity, panel };
