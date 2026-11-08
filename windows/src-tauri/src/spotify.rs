@@ -288,15 +288,10 @@ pub async fn spotify_volume(volume: u8, spotify: State<'_, Arc<Spotify>>) -> Res
     Ok(())
 }
 
-/// Traz o Spotify pra frente. O Windows não expõe o id da faixa, então abre o app (sem interromper a reprodução).
+/// Traz o Spotify pra frente (sem interromper a reprodução). O Windows não expõe o id da faixa: o `id` do frontend
+/// é só um hash, não um `spotify:track:...`, então o argumento é ignorado e abre o app.
 #[tauri::command]
-pub async fn spotify_open(uri: String) -> Result<(), String> {
-    let valid = uri
-        .strip_prefix("spotify:track:")
-        .is_some_and(|id| !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric()));
-    if !valid {
-        return Err(format!("URI inválida: {uri}"));
-    }
+pub async fn spotify_open(_uri: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(|| {
         Command::new("cmd").args(["/C", "start", "", "spotify:"]).creation_flags(CREATE_NO_WINDOW).status()
     })
