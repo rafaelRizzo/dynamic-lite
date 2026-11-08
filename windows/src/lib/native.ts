@@ -44,6 +44,31 @@ export type Repeat = "off" | "context" | "track";
 
 export type Style = "black" | "translucent" | "glass" | "themed";
 
+export type LyricsResult = { syncedLyrics: string | null; plainLyrics: string | null };
+
+export type ShelfKind = "audio" | "image" | "file";
+export type ShelfItem = {
+  id: string;
+  name: string;
+  /** cópia guardada pelo app */
+  path: string;
+  size: number;
+  kind: ShelfKind;
+  addedAt: number;
+  /** pasta do arquivo original, se ainda existe: onde o conversor grava */
+  outDir: string | null;
+};
+export type ConvertFormat = "wav" | "wav-ulaw" | "wav-alaw" | "gsm" | "wav-gsm" | "mp3";
+export type ConvertOptions = {
+  format: ConvertFormat;
+  sampleRate?: number | null;
+  channels?: number | null;
+  bitrate?: number | null;
+  normalize: boolean;
+};
+export type Converted = { path: string; bytes: number; seconds: number };
+export type ConvertProgress = { job: string; fraction: number };
+
 export type Settings = {
   style: Style;
   /** 0.6-1, só no Style Translucent */
@@ -96,6 +121,14 @@ export type Settings = {
   /** 0.1-1 */
   sfxVolume: number;
   showBluetooth: boolean;
+  /** botão de letra sincronizada no Now Playing */
+  showLyrics: boolean;
+  /** ajuste de sincronia da letra em ms: positivo adianta, negativo atrasa */
+  lyricsOffsetMs: number;
+  /** aba Arquivos (prateleira + conversor de áudio) */
+  showFiles: boolean;
+  /** toca o som do app ao terminar uma conversão */
+  convertSound: boolean;
   showShortcuts: boolean;
   /** ids de `panels/shortcuts/catalog.ts`, na ordem da grade */
   shortcuts: string[];
@@ -261,8 +294,35 @@ export const native = {
   spotifyRepeat: (mode: Repeat) => invoke<void>("spotify_repeat", { mode }),
   /** Traz o Spotify pra frente na faixa (`spotify:track:...`), sem mexer na reprodução. */
   spotifyOpen: (uri: string) => invoke<void>("spotify_open", { uri }),
+  shelfList: () => invoke<ShelfItem[]>("shelf_list"),
+  /** Copia os arquivos pra prateleira (pastas são ignoradas) e devolve a prateleira inteira. */
+  shelfAdd: (paths: string[]) => invoke<ShelfItem[]>("shelf_add", { paths }),
+  /** Guarda a imagem da área de transferência; erro com mensagem pronta se não houver. */
+  shelfPasteImage: () => invoke<ShelfItem[]>("shelf_paste_image"),
+  /** Abre o seletor de arquivos do sistema (começa em Downloads). */
+  shelfPick: () => invoke<ShelfItem[]>("shelf_pick"),
+  shelfRemove: (id: string) => invoke<ShelfItem[]>("shelf_remove", { id }),
+  shelfClear: () => invoke<ShelfItem[]>("shelf_clear"),
+  shelfOpen: (id: string) => invoke<void>("shelf_open", { id }),
+  shelfReveal: (id: string) => invoke<void>("shelf_reveal", { id }),
+  revealFile: (path: string) => invoke<void>("reveal_file", { path }),
+  /** Converte um áudio e grava ao lado do original (`outDir` vazio: ao lado do arquivo guardado). */
+  convertAudio: (job: string, input: string, outDir: string | null, suffix: string, options: ConvertOptions) =>
+    invoke<Converted>("convert_audio", { job, input, outDir, suffix, options }),
+  onConvertProgress: on<ConvertProgress>("convert://progress"),
+  /** Arquivos do sistema estão sendo arrastados por cima da Island. */
+  onShelfDrag: on<boolean>("shelf://drag"),
+  /** A prateleira inteira, depois de soltar arquivos (o Rust guarda a cópia). */
+  onShelfChanged: on<ShelfItem[]>("shelf://changed"),
+  /** Soltar falhou: mensagem pronta. */
+  onShelfError: on<string>("shelf://error"),
+  /** Letra da faixa na LRCLIB (`null` = não existe); erro = serviço ou rede fora. */
+  lyricsGet: (title: string, artist: string, album: string, duration: number) =>
+    invoke<LyricsResult | null>("lyrics_get", { title, artist, album, duration }),
   onNotch: on<Notch>("island://notch"),
   onHover: on<boolean>("island://hover"),
+  /** Algo foi arrastado do sistema pra cima da Island (botão apertado ao entrar). */
+  onDragIn: on<boolean>("island://drag"),
   /** 3 dedos no trackpad com o mouse na Island: 1 avança, -1 volta */
   onSwipe: on<number>("island://swipe"),
   onSpotify: on<PlayerState>("spotify://state"),

@@ -24,6 +24,8 @@ export type Panel = {
   expandedSize: { width: number; height: number };
   /** Fundo do Expanded no Style Themed; sem ele, fica preto. */
   theme?: Theme | null;
+  /** Largura a mais, à direita, só enquanto esta aba está aberta (ex.: a letra ao lado do player). */
+  extraWidth?: number;
   /** Fora da barra de abas: só aparece quando forçado (ex.: Alert). */
   hidden?: boolean;
 };

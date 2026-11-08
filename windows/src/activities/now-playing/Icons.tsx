@@ -70,3 +70,10 @@ export const RepeatOneIcon = ({ size = 18 }: IconProps) => (
     <path d="M11 10.5l1.5-1v5" strokeWidth="1.7" />
   </svg>
 );
+
+export const LyricsIcon = ({ size = 16 }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4h0A2.5 2.5 0 0 1 4 13.5Z" />
+    <path d="M8 8h8M8 11.5h5" />
+  </svg>
+);

@@ -2,7 +2,7 @@
 //! `DEVPKEY_Device_BatteryLevel` num nó PnP do aparelho (o do serviço Handsfree nos fones clássicos, o próprio nó
 //! nos LE), não no dispositivo pareado: por isso os dois são cruzados pelo endereço Bluetooth.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::Serialize;
 use windows::core::{Interface, HSTRING};
@@ -59,24 +59,26 @@ fn mac_of_pnp(id: &str) -> Option<String> {
     is_hex(&mac).then_some(mac)
 }
 
-/// Nível de bateria por endereço (nós presentes); só vale para aparelho conectado.
-fn batteries() -> HashMap<String, u8> {
+/// Nós PnP Bluetooth presentes: nível de bateria por endereço (só vale para aparelho conectado) e o conjunto de
+/// endereços com algum nó presente. Aparelho pareado e desligado não tem nó presente.
+fn present_nodes() -> (HashMap<String, u8>, HashSet<String>) {
     let props = IIterable::<HSTRING>::from(vec![HSTRING::from(BATTERY_KEY), HSTRING::from(PRESENT_KEY)]);
     let filter = HSTRING::from("System.Devices.DeviceInstanceId:~~\"BTH\"");
-    let Ok(op) = PnpObject::FindAllAsyncAqsFilter(PnpObjectType::Device, &props, &filter) else { return HashMap::new() };
-    let Ok(nodes) = op.join() else { return HashMap::new() };
-    let mut out = HashMap::new();
+    let Ok(op) = PnpObject::FindAllAsyncAqsFilter(PnpObjectType::Device, &props, &filter) else { return Default::default() };
+    let Ok(nodes) = op.join() else { return Default::default() };
+    let (mut levels, mut present) = (HashMap::new(), HashSet::new());
     for node in nodes {
         let (Ok(id), Ok(map)) = (node.Id(), node.Properties()) else { continue };
-        let Some(level) = lookup::<u8>(&map, BATTERY_KEY).filter(|b| *b <= 100) else { continue };
         if lookup::<bool>(&map, PRESENT_KEY) != Some(true) {
             continue;
         }
-        if let Some(mac) = mac_of_pnp(&id.to_string()) {
-            out.insert(mac, level);
+        let Some(mac) = mac_of_pnp(&id.to_string()) else { continue };
+        if let Some(level) = lookup::<u8>(&map, BATTERY_KEY).filter(|b| *b <= 100) {
+            levels.insert(mac.clone(), level);
         }
+        present.insert(mac);
     }
-    out
+    (levels, present)
 }
 
 /// Estado real da conexão. `System.Devices.Aep.IsConnected` fica verdadeiro para aparelho só pareado e ausente.
@@ -90,7 +92,9 @@ fn is_connected(id: &HSTRING, le: bool) -> Option<bool> {
 }
 
 /// Dispositivos pareados (clássicos e LE): `(endereço, nome, conectado)`.
-fn paired() -> Vec<(String, String, bool)> {
+/// `ConnectionStatus` do WinRT acusa "conectado" para fone clássico pareado e desligado (visto com vários pareamentos
+/// antigos do mesmo aparelho): nos clássicos só vale se algum nó PnP dele está presente.
+fn paired(present: &HashSet<String>) -> Vec<(String, String, bool)> {
     let props = IIterable::<HSTRING>::from(vec![HSTRING::from(CONNECTED_KEY)]);
     let mut out = Vec::new();
     for (le, selector) in [
@@ -105,7 +109,8 @@ fn paired() -> Vec<(String, String, bool)> {
             let name = name.to_string();
             let Some(mac) = mac_of_paired(&id.to_string()) else { continue };
             if !name.trim().is_empty() {
-                let connected = is_connected(&id, le).unwrap_or_else(|| lookup::<bool>(&map, CONNECTED_KEY).unwrap_or(false));
+                let reported = is_connected(&id, le).unwrap_or_else(|| lookup::<bool>(&map, CONNECTED_KEY).unwrap_or(false));
+                let connected = reported && (le || present.contains(&mac));
                 out.push((mac, name, connected));
             }
         }
@@ -116,9 +121,9 @@ fn paired() -> Vec<(String, String, bool)> {
 /// Dispositivos Bluetooth pareados. Conectados primeiro, depois por nome.
 pub fn read() -> Vec<BluetoothBattery> {
     win::com_init();
-    let levels = batteries();
+    let (levels, present) = present_nodes();
     let mut all: Vec<BluetoothBattery> = Vec::new();
-    for (mac, name, connected) in paired() {
+    for (mac, name, connected) in paired(&present) {
         // o mesmo aparelho vem pelos dois protocolos: conectado se qualquer um disser que sim
         match all.iter_mut().find(|d| d.id == mac) {
             Some(existing) => existing.connected |= connected,

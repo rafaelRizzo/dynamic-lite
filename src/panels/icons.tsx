@@ -55,3 +55,9 @@ export const BluetoothIcon = () => (
     <path d="M7.5 7.5 16.5 16.5 12 21V3l4.5 4.5-9 9" />
   </Icon>
 );
+
+export const FolderIcon = () => (
+  <Icon>
+    <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.5h7.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z" />
+  </Icon>
+);

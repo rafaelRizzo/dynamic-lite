@@ -5,6 +5,7 @@ use std::cell::Cell;
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
 use windows::Win32::Foundation::POINT;
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_LBUTTON};
 use windows::Win32::UI::WindowsAndMessaging::{
     GetCursorPos, GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
     SWP_NOSIZE, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
@@ -93,6 +94,12 @@ pub fn mouse_location(_app: &AppHandle) -> (f64, f64) {
         Ok(()) => (f64::from(p.x), f64::from(p.y)),
         Err(_) => (f64::MIN, f64::MIN),
     }
+}
+
+/// O botão esquerdo do mouse está apertado agora (bit mais alto de `GetAsyncKeyState`).
+pub fn left_button_down() -> bool {
+    // SAFETY: só lê o estado do teclado e do mouse
+    unsafe { GetAsyncKeyState(i32::from(VK_LBUTTON.0)) < 0 }
 }
 
 /// Garante que a janela principal continua topmost. Só mexe se ela perdeu o estado: reafirmar sempre a jogaria

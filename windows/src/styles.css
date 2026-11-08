@@ -1241,3 +1241,571 @@ body,
   font-size: 12px;
   color: var(--text-dim);
 }
+
+/* letra ao lado do player: a ilha cresce na largura, a coluna ocupa a altura toda */
+.np-split {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+.np-split {
+  overflow: hidden;
+}
+/* o player mantém a largura de sempre: ao fechar a letra a ilha encolhe e só corta a coluna, sem espremê-lo */
+.np-split > .np-expanded {
+  flex: none;
+  width: var(--base-w);
+}
+.np-lyr-side {
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  padding: 14px 22px 14px 4px;
+}
+.np-lyr {
+  --lyr-ease: cubic-bezier(0.3, 0.8, 0.3, 1);
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 20px;
+}
+/* o fundo cobre a coluna toda; só os versos somem (e desfocam) ao se aproximar das bordas */
+.np-lyr-view {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+}
+.np-lyr-rail {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  padding-inline: 14px;
+  transition: transform 0.45s var(--lyr-ease);
+  will-change: transform;
+}
+.np-lyr-line {
+  padding: 8px 4px;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.28;
+  text-align: left;
+  text-wrap: balance;
+  /* o verso atual cresce 14% a partir da esquerda: reserva essa folga pra ele nunca passar da borda */
+  box-sizing: border-box;
+  width: calc(100% / 1.14);
+  overflow-wrap: anywhere;
+  color: var(--text);
+  /* quanto mais longe do verso atual, mais apagado e desfocado */
+  opacity: calc(0.62 - var(--d) * 0.17);
+  filter: blur(calc(var(--d) * 0.35px));
+  transform: scale(0.94);
+  transform-origin: left center;
+  /* mesma duração e curva do trilho: o verso cresce enquanto a coluna desliza, sem um adiantar-se ao outro (isso dava o "pulinho") */
+  transition: opacity 0.45s var(--lyr-ease), transform 0.45s var(--lyr-ease), color 0.45s var(--lyr-ease), filter 0.45s var(--lyr-ease), text-shadow 0.45s var(--lyr-ease);
+  will-change: transform, opacity;
+  cursor: pointer;
+}
+.np-lyr-line:hover {
+  opacity: 0.85;
+  filter: none;
+}
+.np-lyr-line[data-on] {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.14);
+}
+.np-lyr-msg {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--fill-1);
+  font-size: 12px;
+  text-align: center;
+  padding: 0 16px;
+  color: var(--text-dim);
+}
+.np-lyr-plain {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: var(--fill-1);
+  padding: 12px 14px;
+  white-space: pre-line;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-3) transparent;
+}
+
+/* ---------- aba Arquivos: prateleira e conversor ---------- */
+.fx-expanded {
+  --fx-ok: rgb(52 211 153);
+  --fx-drop: rgb(110 168 255);
+  height: 100%;
+  box-sizing: border-box;
+  padding-inline: 18px;
+  padding-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.fx-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.fx-head-actions {
+  display: flex;
+  gap: 2px;
+}
+.fx-link {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.fx-link svg {
+  width: 13px;
+  height: 13px;
+}
+.fx-link:hover {
+  background: var(--fill-2);
+  color: var(--text);
+}
+.fx-link[data-danger] {
+  color: rgb(255 120 110);
+  background: rgb(255 120 110 / 0.14);
+}
+
+.fx-zone {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  border: 1.5px dashed var(--fill-3);
+  border-radius: 14px;
+  text-align: center;
+  color: var(--text-dim);
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+.fx-zone[data-drag] {
+  border-color: var(--fx-drop);
+  background: rgb(110 168 255 / 0.1);
+  color: var(--text);
+}
+.fx-folder {
+  width: 36px;
+  height: 36px;
+}
+.fx-expanded[data-drag="true"] .fx-arrow {
+  animation: fx-bob 0.7s ease-in-out infinite alternate;
+}
+@keyframes fx-bob {
+  to {
+    transform: translateY(3px);
+  }
+}
+.fx-zone-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.fx-zone-sub {
+  font-size: 11px;
+}
+
+.fx-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--fill-3) transparent;
+  position: relative;
+}
+.fx-drop-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border: 1.5px dashed var(--fx-drop);
+  border-radius: 12px;
+  background: rgb(10 20 40 / 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fx-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 11px;
+  background: var(--fill-1);
+}
+.fx-row[data-select] {
+  grid-template-columns: 16px 30px minmax(0, 1fr) auto;
+}
+.fx-row[data-flash] {
+  animation: fx-flash 1.2s ease-out;
+}
+@keyframes fx-flash {
+  0% {
+    background: rgb(52 211 153 / 0.38);
+  }
+  100% {
+    background: var(--fill-1);
+  }
+}
+.fx-ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--fill-2);
+  color: var(--text-dim);
+}
+.fx-ico svg {
+  width: 16px;
+  height: 16px;
+}
+.fx-ico[data-kind="audio"] {
+  color: rgb(255 170 120);
+}
+.fx-ico[data-kind="image"] {
+  color: rgb(150 190 255);
+}
+.fx-ico[data-done] {
+  background: transparent;
+  overflow: visible;
+}
+.fx-ico svg.fx-done {
+  width: 30px;
+  height: 30px;
+}
+.fx-meta {
+  min-width: 0;
+}
+.fx-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fx-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fx-sub[data-ok] {
+  color: var(--fx-ok);
+}
+.fx-sub[data-bad] {
+  color: rgb(255 120 110);
+}
+.fx-sub-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fx-inline {
+  all: unset;
+  flex: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fx-inline:hover {
+  color: var(--text);
+}
+
+.fx-acts {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.fx-conv {
+  all: unset;
+  margin-right: 4px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--fill-3);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.fx-conv:hover,
+.fx-conv[data-open] {
+  background: var(--fx-ok);
+  color: #04130d;
+}
+.fx-conv:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.fx-ib {
+  all: unset;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.fx-ib svg {
+  width: 14px;
+  height: 14px;
+}
+.fx-ib:hover {
+  background: var(--fill-2);
+  color: var(--text);
+}
+.fx-bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--fill-3);
+  overflow: hidden;
+}
+.fx-bar i {
+  display: block;
+  height: 100%;
+  background: var(--fx-ok);
+  border-radius: 2px;
+  transition: width 0.15s linear;
+}
+.fx-chips {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 3px;
+}
+.fx-chip {
+  all: unset;
+  padding: 4px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  background: var(--fill-2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.fx-chip:hover {
+  background: var(--fill-3);
+}
+.fx-chip:active {
+  transform: scale(0.94);
+}
+.fx-chip[data-toggle] {
+  color: var(--text-dim);
+  outline: 1px dashed var(--fill-3);
+}
+.fx-chip[data-toggle][aria-pressed="true"] {
+  background: var(--fx-ok);
+  color: #04130d;
+  outline: none;
+}
+.fx-batch {
+  padding: 6px 4px 8px;
+  border-bottom: 1px solid var(--fill-2);
+  margin-bottom: 6px;
+}
+.fx-batch-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  padding-bottom: 5px;
+}
+.fx-link[data-active] {
+  color: var(--text);
+}
+.fx-check {
+  all: unset;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1.5px solid var(--fill-3);
+  color: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.fx-check svg {
+  width: 10px;
+  height: 10px;
+}
+.fx-check[data-on] {
+  background: var(--fx-ok);
+  border-color: var(--fx-ok);
+  color: #04130d;
+}
+.fx-check:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* formatos do lote numa linha só, rolando de lado: não come a altura da lista */
+.fx-batch .fx-chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0 28px 4px 0;
+  scrollbar-width: none;
+  /* as bordas esmaecem em vez de cortar seco (--ml/--mr vêm do scroll); o respiro no fim deixa o último chip sair do fade */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--ml, 0px), #000 calc(100% - var(--mr, 28px)), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 var(--ml, 0px), #000 calc(100% - var(--mr, 28px)), transparent);
+}
+.fx-batch .fx-chip {
+  flex: none;
+}
+.fx-toast {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 12px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: rgb(60 60 66 / 0.96);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+/* enquanto converte */
+.fx-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 12px;
+  flex: none;
+}
+.fx-wave i {
+  width: 2.5px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fx-ok);
+  animation: fx-wave 0.8s ease-in-out infinite alternate;
+}
+.fx-wave i:nth-child(2) { animation-delay: -0.2s; }
+.fx-wave i:nth-child(3) { animation-delay: -0.45s; }
+.fx-wave i:nth-child(4) { animation-delay: -0.1s; }
+.fx-wave i:nth-child(5) { animation-delay: -0.35s; }
+@keyframes fx-wave {
+  to {
+    height: 12px;
+  }
+}
+
+/* ao concluir: anel desenhado, visto com salto e faíscas */
+.fx-done {
+  overflow: visible;
+}
+.fx-ring {
+  fill: none;
+  stroke: var(--fx-ok);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 139;
+  stroke-dashoffset: 139;
+  transform: rotate(-90deg);
+  transform-origin: 26px 26px;
+  animation: fx-draw 0.5s ease-out forwards;
+}
+.fx-tick {
+  fill: none;
+  stroke: var(--fx-ok);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 42;
+  stroke-dashoffset: 42;
+  animation: fx-draw 0.34s ease-out 0.38s forwards;
+}
+.fx-pop {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: fx-pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) 0.38s both;
+}
+.fx-spark {
+  stroke: var(--fx-ok);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  opacity: 0;
+  animation: fx-spark 0.62s ease-out 0.42s forwards;
+}
+@keyframes fx-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fx-pop {
+  from {
+    transform: scale(0.4);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes fx-spark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) scale(1.55);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-ring,
+  .fx-tick {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .fx-pop,
+  .fx-spark,
+  .fx-wave i,
+  .fx-row[data-flash],
+  .fx-expanded[data-drag="true"] .fx-arrow {
+    animation: none;
+  }
+  .fx-spark {
+    opacity: 0;
+  }
+}

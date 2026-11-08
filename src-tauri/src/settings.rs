@@ -100,6 +100,14 @@ pub struct Settings {
     /// 0.1-1.0
     pub sfx_volume: f64,
     pub show_bluetooth: bool,
+    /// botão de letra sincronizada (LRCLIB) no Now Playing
+    pub show_lyrics: bool,
+    /// ajuste de sincronia da letra, em ms: positivo adianta a troca de linha, negativo atrasa
+    pub lyrics_offset_ms: i32,
+    /// aba Arquivos (prateleira + conversor de áudio)
+    pub show_files: bool,
+    /// toca o som do app ao terminar uma conversão
+    pub convert_sound: bool,
     pub show_shortcuts: bool,
     /// ids do catálogo de atalhos do frontend, na ordem da grade
     pub shortcuts: Vec<String>,
@@ -125,7 +133,7 @@ impl Default for Settings {
             haptics: true,
             swipe_tabs: true,
             invert_swipe: false,
-            remember_tab: false,
+            remember_tab: true,
             show_menu_bar_icon: true,
             display: "auto".into(),
             all_spaces: true,
@@ -144,6 +152,10 @@ impl Default for Settings {
             sfx: "Glass".into(),
             sfx_volume: 0.8,
             show_bluetooth: true,
+            show_lyrics: true,
+            lyrics_offset_ms: 0,
+            show_files: true,
+            convert_sound: true,
             show_shortcuts: false,
             shortcuts: ["wifi", "bluetooth", "sound", "battery", "displays", "notifications"]
                 .map(String::from)
@@ -188,6 +200,7 @@ impl Settings {
         self.long_break_min = self.long_break_min.clamp(1, 1440);
         self.long_every = self.long_every.clamp(2, 10);
         self.sfx_volume = self.sfx_volume.clamp(0.1, 1.0);
+        self.lyrics_offset_ms = self.lyrics_offset_ms.clamp(-3000, 3000);
         if self.sfx.is_empty() || !self.sfx.chars().all(|c| c.is_ascii_alphanumeric()) {
             self.sfx = "Glass".into();
         }

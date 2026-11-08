@@ -3,17 +3,20 @@ compile_error!("Dynamic Lite só roda no macOS");
 
 mod bluetooth;
 mod calendar;
+mod convert;
 mod claude_usage;
 mod equalizer;
 mod equalizer_gif;
 mod gesture_guard;
 mod layout;
+mod lyrics;
 mod macos;
 mod menu;
 mod multitouch;
 mod pomodoro;
 mod scheduler;
 mod settings;
+mod shelf;
 mod sound;
 mod spotify;
 mod system_media;
@@ -36,9 +39,15 @@ type SharedLayout = Arc<Mutex<Layout>>;
 
 const MAIN_LABEL: &str = "main";
 const HOVER_EVENT: &str = "island://hover";
+/// `true` quando o cursor entra na Island com o botão do mouse já apertado: algo está sendo arrastado pra cima dela
+/// (um arquivo, por exemplo). Com a Island fechada a janela ignora o mouse, então o arrasto não chega ao webview.
+const DRAG_EVENT: &str = "island://drag";
 const NOTCH_EVENT: &str = "island://notch";
 const SWIPE_EVENT: &str = "island://swipe";
 const HOVER_POLL: Duration = Duration::from_millis(16);
+/// Ritmo do hover com o mouse parado há `HOVER_REST_AFTER` fora da Island.
+const HOVER_POLL_IDLE: Duration = Duration::from_millis(80);
+const HOVER_REST_AFTER: Duration = Duration::from_millis(600);
 /// Intervalo mínimo entre dois gestos de troca de aba.
 const SWIPE_COOLDOWN: Duration = Duration::from_millis(450);
 
@@ -174,14 +183,25 @@ fn spawn_hover_tracker(app: AppHandle, layout: SharedLayout) {
     thread::spawn(move || {
         let Some(win) = app.get_webview_window(MAIN_LABEL) else { return };
         let mut inside = false;
+        let mut last_pos = (f64::MIN, f64::MIN);
+        let mut last_move = Instant::now();
         loop {
-            thread::sleep(HOVER_POLL);
+            // mouse parado fora da Island: devagar; qualquer movimento volta ao ritmo cheio
+            let resting = !inside && last_move.elapsed() > HOVER_REST_AFTER;
+            thread::sleep(if resting { HOVER_POLL_IDLE } else { HOVER_POLL });
             let (x, y) = macos::mouse_location();
+            if (x, y) != last_pos {
+                last_pos = (x, y);
+                last_move = Instant::now();
+            }
             let now = layout.lock().unwrap().hit(x, y);
             if now != inside {
                 inside = now;
                 let _ = win.set_ignore_cursor_events(!inside);
                 let _ = app.emit(HOVER_EVENT, inside);
+                if inside && macos::left_button_down() {
+                    let _ = app.emit(DRAG_EVENT, true);
+                }
             }
         }
     });
@@ -241,6 +261,17 @@ pub fn run() {
             spotify::spotify_seek,
             spotify::spotify_volume,
             spotify::spotify_open,
+            lyrics::lyrics_get,
+            convert::convert_audio,
+            shelf::shelf_list,
+            shelf::shelf_add,
+            shelf::shelf_paste_image,
+            shelf::shelf_pick,
+            shelf::shelf_remove,
+            shelf::shelf_clear,
+            shelf::shelf_open,
+            shelf::shelf_reveal,
+            shelf::reveal_file,
             spotify::spotify_shuffle,
             spotify::spotify_repeat,
             equalizer::equalizer_fps,
@@ -253,6 +284,13 @@ pub fn run() {
             updater::check_update,
             updater::install_update,
         ])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::DragDrop(drag) = event {
+                if window.label() == MAIN_LABEL {
+                    shelf::on_drag_drop(window.app_handle(), drag);
+                }
+            }
+        })
         .setup(move |app| {
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 

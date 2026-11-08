@@ -84,6 +84,8 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
   const [tab, setTab] = useState<string | null>(() => (settings.rememberTab ? loadTab() : null));
   // digitando num campo (tempo do Pomodoro, lembrete) a Island não fecha, mesmo com o mouse fora
   const [typing, setTyping] = useState(false);
+  // algo (ex.: o seletor de arquivos) pede a ilha aberta mesmo com o mouse fora dela
+  const [holding, setHolding] = useState(false);
   useEffect(() => {
     const isField = (t: EventTarget | null) => t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement;
     const onIn = (e: FocusEvent) => setTyping(isField(e.target));
@@ -96,7 +98,20 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
     };
   }, []);
 
-  const present = hovered || typing;
+  // outras partes do app pedem uma aba (ex.: arrastar arquivos por cima abre a aba Arquivos)
+  useEffect(() => {
+    const open = (e: Event) => setTab((e as CustomEvent<string>).detail);
+    window.addEventListener("island:tab", open);
+    return () => window.removeEventListener("island:tab", open);
+  }, []);
+
+  useEffect(() => {
+    const hold = (e: Event) => setHolding((e as CustomEvent<boolean>).detail);
+    window.addEventListener("island:hold", hold);
+    return () => window.removeEventListener("island:hold", hold);
+  }, []);
+
+  const present = hovered || typing || holding;
   useEffect(() => {
     if (!present) {
       setClicked(false);
@@ -126,7 +141,7 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
   // e o mouse ficaria fora da Hit Region (a Island fecharia no meio do clique)
   const sizing = showTabs ? tabs : panel ? [panel] : [];
   const expandedSize: Size | null = panel && {
-    width: Math.max(MIN_EXPANDED_WIDTH, ...sizing.map((p) => p.expandedSize.width)),
+    width: Math.max(MIN_EXPANDED_WIDTH, ...sizing.map((p) => p.expandedSize.width)) + (panel.extraWidth ?? 0),
     height: Math.max(...sizing.map((p) => p.expandedSize.height)) + (showTabs ? TAB_BAR_HEIGHT : 0),
   };
 
@@ -134,7 +149,7 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
   const slots = composeSlots(activities, compactLayout);
   const hasCompact = !!(slots.left || slots.right);
 
-  const wantsOpen = !!forced || typing || (settings.expandOn === "hover" ? hovered : hovered && clicked);
+  const wantsOpen = !!forced || typing || holding || (settings.expandOn === "hover" ? hovered : hovered && clicked);
   const mode: Mode = !panel ? (hasCompact ? "compact" : "idle") : wantsOpen ? "expanded" : hasCompact ? "compact" : "idle";
 
   // 2 dedos pro lado no touchpad (ou Shift + roda) com a Island aberta: próxima/anterior aba, sem dar a volta
@@ -189,7 +204,7 @@ export function Island({ notch, activities, panels, forced, hovered, settings, p
 
   const expandedContent = panel && (
     <div className="expanded-shell">
-      <div className="expanded-panel" style={{ height: `calc(100% - ${showTabs ? TAB_BAR_HEIGHT : 0}px)` }}>
+      <div className="expanded-panel" style={{ height: `calc(100% - ${showTabs ? TAB_BAR_HEIGHT : 0}px)`, "--base-w": `${(expandedSize?.width ?? 0) - (panel.extraWidth ?? 0)}px` } as React.CSSProperties}>
         <AnimatePresence initial={false} mode="popLayout" custom={direction.current}>
           <motion.div
             key={panel.id}
