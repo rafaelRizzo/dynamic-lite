@@ -39,6 +39,9 @@ const HOVER_EVENT: &str = "island://hover";
 const NOTCH_EVENT: &str = "island://notch";
 const SWIPE_EVENT: &str = "island://swipe";
 const HOVER_POLL: Duration = Duration::from_millis(16);
+/// Ritmo do hover com o mouse parado há `HOVER_REST_AFTER` fora da Island.
+const HOVER_POLL_IDLE: Duration = Duration::from_millis(80);
+const HOVER_REST_AFTER: Duration = Duration::from_millis(600);
 /// Intervalo mínimo entre dois gestos de troca de aba.
 const SWIPE_COOLDOWN: Duration = Duration::from_millis(450);
 
@@ -174,9 +177,17 @@ fn spawn_hover_tracker(app: AppHandle, layout: SharedLayout) {
     thread::spawn(move || {
         let Some(win) = app.get_webview_window(MAIN_LABEL) else { return };
         let mut inside = false;
+        let mut last_pos = (f64::MIN, f64::MIN);
+        let mut last_move = Instant::now();
         loop {
-            thread::sleep(HOVER_POLL);
+            // mouse parado fora da Island: devagar; qualquer movimento volta ao ritmo cheio
+            let resting = !inside && last_move.elapsed() > HOVER_REST_AFTER;
+            thread::sleep(if resting { HOVER_POLL_IDLE } else { HOVER_POLL });
             let (x, y) = macos::mouse_location();
+            if (x, y) != last_pos {
+                last_pos = (x, y);
+                last_move = Instant::now();
+            }
             let now = layout.lock().unwrap().hit(x, y);
             if now != inside {
                 inside = now;
