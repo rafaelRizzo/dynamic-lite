@@ -38,6 +38,10 @@ const SYSTEM_HOLD: Duration = Duration::from_secs(2);
 const START_TIMEOUT: Duration = Duration::from_secs(3);
 /// Intervalo de leitura do buffer de loopback.
 const READ_EVERY: Duration = Duration::from_millis(10);
+/// Intervalo de leitura em silêncio: o buffer de 1 s aguenta, e o som novo é notado em até esse tempo.
+const IDLE_READ_EVERY: Duration = Duration::from_millis(60);
+/// Intervalo do emissor da fonte Sistema enquanto não há som audível.
+const IDLE_FRAME: Duration = Duration::from_millis(120);
 
 /// Centro (Hz) de cada barra, da esquerda pra direita: grave, médio-grave, médio, agudo.
 const BANDS: [f32; 4] = [80.0, 350.0, 1500.0, 6000.0];
@@ -113,6 +117,11 @@ impl Analyzer {
             peak: [SILENCE; 4],
             levels,
         }
+    }
+
+    /// Todos os envelopes já caíram ao silêncio.
+    fn settled(&self) -> bool {
+        self.env.iter().all(|&e| e <= SILENCE)
     }
 
     /// `mono`: o bloco já misturado num canal só.
@@ -233,8 +242,9 @@ fn capture(levels: Arc<Levels>, alive: Arc<AtomicBool>, ready: &Sender<bool>) ->
         let mut mono: Vec<f32> = Vec::with_capacity(rate as usize / 20);
         // 10 ms de silêncio, pra os envelopes caírem quando o loopback para de entregar pacotes
         let quiet = vec![0.0f32; (rate / 100) as usize];
+        let mut idle = false;
         while alive.load(Ordering::Relaxed) {
-            thread::sleep(READ_EVERY);
+            thread::sleep(if idle { IDLE_READ_EVERY } else { READ_EVERY });
             let mut got = false;
             while capture.GetNextPacketSize()? > 0 {
                 let mut data: *mut u8 = ptr::null_mut();
@@ -250,9 +260,11 @@ fn capture(levels: Arc<Levels>, alive: Arc<AtomicBool>, ready: &Sender<bool>) ->
                 capture.ReleaseBuffer(frames)?;
                 got = true;
             }
-            if !got {
+            // envelopes já zerados e sem pacotes: nada a analisar, lê devagar até o som voltar
+            if !got && !analyzer.settled() {
                 analyzer.process(&quiet);
             }
+            idle = analyzer.settled();
         }
         let _ = client.Stop();
     }
@@ -324,7 +336,7 @@ fn spawn_emitter(app: AppHandle, levels: Arc<Levels>, alive: Arc<AtomicBool>, so
         let mut silent_since = Instant::now();
         let mut audible = false;
         while alive.load(Ordering::Relaxed) {
-            thread::sleep(FRAME);
+            thread::sleep(if source == Source::System && !audible { IDLE_FRAME } else { FRAME });
             if !alive.load(Ordering::Relaxed) {
                 break;
             }

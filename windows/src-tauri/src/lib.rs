@@ -22,7 +22,7 @@ mod win;
 use std::os::windows::process::CommandExt;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -38,6 +38,9 @@ pub(crate) const MAIN_LABEL: &str = "main";
 const HOVER_EVENT: &str = "island://hover";
 const NOTCH_EVENT: &str = "island://notch";
 const HOVER_POLL: Duration = Duration::from_millis(16);
+/// Ritmo do hover com o mouse parado há `HOVER_REST_AFTER` fora da Island.
+const HOVER_POLL_IDLE: Duration = Duration::from_millis(80);
+const HOVER_REST_AFTER: Duration = Duration::from_millis(600);
 /// Intervalo em que a posição da janela é reaplicada: o Windows pode tirá-la do lugar (barra de tarefas, DPI).
 const TOPMOST_REFRESH: Duration = Duration::from_secs(2);
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -142,20 +145,26 @@ fn spawn_hover_tracker(app: AppHandle, layout: SharedLayout) {
     thread::spawn(move || {
         let Some(win) = app.get_webview_window(MAIN_LABEL) else { return };
         let mut inside = false;
-        let mut ticks = 0u32;
-        let refresh_every = (TOPMOST_REFRESH.as_millis() / HOVER_POLL.as_millis()) as u32;
+        let mut last_pos = (f64::MIN, f64::MIN);
+        let mut last_move = Instant::now();
+        let mut last_refresh = Instant::now();
         loop {
-            thread::sleep(HOVER_POLL);
+            // mouse parado fora da Island: devagar; qualquer movimento volta ao ritmo cheio
+            let resting = !inside && last_move.elapsed() > HOVER_REST_AFTER;
+            thread::sleep(if resting { HOVER_POLL_IDLE } else { HOVER_POLL });
             let (x, y) = win::mouse_location(&app);
+            if (x, y) != last_pos {
+                last_pos = (x, y);
+                last_move = Instant::now();
+            }
             let now = layout.lock().unwrap().hit(x, y);
             if now != inside {
                 inside = now;
                 let _ = win.set_ignore_cursor_events(!inside);
                 let _ = app.emit(HOVER_EVENT, inside);
             }
-            ticks += 1;
-            if ticks >= refresh_every {
-                ticks = 0;
+            if last_refresh.elapsed() >= TOPMOST_REFRESH {
+                last_refresh = Instant::now();
                 let handle = app.clone();
                 let _ = app.run_on_main_thread(move || {
                     reposition(&handle);

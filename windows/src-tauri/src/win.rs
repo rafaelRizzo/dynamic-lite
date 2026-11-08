@@ -3,9 +3,10 @@
 use std::cell::Cell;
 
 use tauri::{AppHandle, Manager, Monitor, PhysicalPosition, WebviewWindow};
+use windows::Win32::Foundation::POINT;
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
+    GetCursorPos, GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_EXSTYLE, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE,
     SWP_NOSIZE, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
 };
 
@@ -84,8 +85,14 @@ pub fn place_window(win: &WebviewWindow, screen: Rect, scale: f64, ui: f64) {
 }
 
 /// Posição global do cursor em pixels físicos, no mesmo espaço de `Rect`.
-pub fn mouse_location(app: &AppHandle) -> (f64, f64) {
-    app.cursor_position().map(|p| (p.x, p.y)).unwrap_or((f64::MIN, f64::MIN))
+pub fn mouse_location(_app: &AppHandle) -> (f64, f64) {
+    // direto na API do Windows: `app.cursor_position()` do Tauri passa pela thread principal a cada chamada,
+    // e este laço roda dezenas de vezes por segundo, acordando o app inteiro à toa
+    let mut p = POINT::default();
+    match unsafe { GetCursorPos(&mut p) } {
+        Ok(()) => (f64::from(p.x), f64::from(p.y)),
+        Err(_) => (f64::MIN, f64::MIN),
+    }
 }
 
 /// Garante que a janela principal continua topmost. Só mexe se ela perdeu o estado: reafirmar sempre a jogaria
