@@ -2,6 +2,9 @@
 //! sistema. Spotify, navegadores e players publicam faixa, capa, posição e aceitam play/pause/pular.
 
 use base64::engine::general_purpose::STANDARD;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
 use base64::Engine;
 use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSession as Session,
@@ -9,6 +12,7 @@ use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSessionMediaProperties as Properties,
 };
 use windows::Storage::Streams::DataReader;
+use windows::Win32::Foundation::E_FAIL;
 
 use crate::win;
 
@@ -20,9 +24,46 @@ pub const TICKS: f64 = 10_000_000.0;
 /// Segundos entre 1601-01-01 (época do WinRT) e 1970-01-01.
 const EPOCH_GAP_SECS: i64 = 11_644_473_600;
 
+/// Depois de uma falha, só se pede um Manager novo passado este tempo.
+const RETRY: Duration = Duration::from_secs(30);
+
+struct Shared {
+    manager: Option<Manager>,
+    requested_at: Option<Instant>,
+}
+
+static SHARED: Mutex<Shared> = Mutex::new(Shared { manager: None, requested_at: None });
+
+/// O Manager de sessões de mídia do processo: pedido uma vez e reaproveitado por todas as threads.
+///
+/// Cada `RequestAsync` deixa um registro no serviço de sessões do Windows que nunca é liberado, nem ao soltar o
+/// objeto. O serviço avisa todos os registros a cada mudança de qualquer sessão: pedir um Manager por leitura
+/// (a cada 1-2 s) acumulava milhares deles em poucas horas e mantinha o serviço e o app queimando CPU.
 pub fn manager() -> windows::core::Result<Manager> {
     win::com_init();
-    Manager::RequestAsync()?.join()
+    let mut shared = SHARED.lock().unwrap();
+    if let Some(manager) = &shared.manager {
+        return Ok(manager.clone());
+    }
+    if shared.requested_at.is_some_and(|at| at.elapsed() < RETRY) {
+        return Err(E_FAIL.into());
+    }
+    shared.requested_at = Some(Instant::now());
+    let manager = Manager::RequestAsync()?.join()?;
+    shared.manager = Some(manager.clone());
+    Ok(manager)
+}
+
+/// Sessões de mídia abertas. Se o sistema recusar (serviço reiniciado), o Manager guardado é descartado e o
+/// próximo `manager()` pede outro, respeitando o intervalo de `RETRY`.
+pub fn sessions(manager: &Manager) -> Vec<Session> {
+    match manager.GetSessions() {
+        Ok(list) => list.into_iter().collect(),
+        Err(_) => {
+            SHARED.lock().unwrap().manager = None;
+            Vec::new()
+        }
+    }
 }
 
 pub fn app_id(session: &Session) -> String {
@@ -34,7 +75,7 @@ pub fn is_spotify(session: &Session) -> bool {
 }
 
 pub fn spotify_session(manager: &Manager) -> Option<Session> {
-    manager.GetSessions().ok()?.into_iter().find(is_spotify)
+    sessions(manager).into_iter().find(is_spotify)
 }
 
 /// Agora, na escala de tempo do WinRT (ticks desde 1601).
@@ -85,5 +126,20 @@ pub fn app_label(aumid: &str) -> String {
     match chars.next() {
         Some(first) => first.to_uppercase().chain(chars).collect(),
         None => "App".to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use windows::core::Interface;
+
+    /// Precisa do serviço de sessões de mídia (não existe no runner do CI): `cargo test manager_is_shared -- --ignored`
+    #[test]
+    #[ignore]
+    fn manager_is_shared() {
+        let first = manager().unwrap();
+        let other = std::thread::spawn(|| manager().unwrap().as_raw() as usize).join().unwrap();
+        assert_eq!(first.as_raw() as usize, other);
     }
 }

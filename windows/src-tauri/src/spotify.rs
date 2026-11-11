@@ -173,14 +173,12 @@ fn changed(last: &PlayerState, next: &PlayerState, since: Duration) -> bool {
 pub fn spawn_watcher(app: AppHandle, spotify: Arc<Spotify>, rx: Receiver<()>, equalizer: Sender<equalizer::Msg>) {
     thread::spawn(move || {
         win::com_init();
-        let mut manager = gsmtc::manager().ok();
         let mut art = Art::default();
         let mut subscribed: usize = 0;
         let mut emitted_at = Instant::now();
         loop {
-            if manager.is_none() {
-                manager = gsmtc::manager().ok();
-            }
+            // o Manager é um só no processo (ver `gsmtc::manager`): pegar de novo a cada volta não cria outro
+            let manager = gsmtc::manager().ok();
             let volume = volume::get().unwrap_or(100);
             let (state, session) = manager.as_ref().map_or((PlayerState::default(), None), |m| read_state(m, &mut art, volume));
 
