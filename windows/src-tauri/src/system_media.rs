@@ -44,7 +44,7 @@ fn non_empty(s: String) -> Option<String> {
 /// A primeira sessão de mídia tocando que não seja o Spotify (ele tem a própria Activity).
 fn read(art: &mut Art) -> Option<SystemMedia> {
     let manager = gsmtc::manager().ok()?;
-    let session = manager.GetSessions().ok()?.into_iter().find(|s| {
+    let session = gsmtc::sessions(&manager).into_iter().find(|s| {
         !gsmtc::is_spotify(s)
             && s.GetPlaybackInfo().and_then(|i| i.PlaybackStatus()).is_ok_and(|p| p == PlaybackStatus::Playing)
     })?;
