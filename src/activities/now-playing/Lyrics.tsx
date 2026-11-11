@@ -121,10 +121,12 @@ type Props = {
   offsetMs: number;
   onSeek: (seconds: number) => void;
   width: number;
+  /** faixa do Notch: a coluna começa abaixo dela, alinhada ao cabeçalho do player */
+  topInset: number;
 };
 
 /** Coluna de letra à direita do player: a ilha cresce na largura enquanto ela está aberta. */
-export function LyricsSide({ playback, track, color, offsetMs, onSeek, width }: Props) {
+export function LyricsSide({ playback, track, color, offsetMs, onSeek, width, topInset }: Props) {
   const lyrics = useLyrics(track, true);
   let body;
   switch (lyrics.status) {
@@ -147,7 +149,7 @@ export function LyricsSide({ playback, track, color, offsetMs, onSeek, width }: 
   return (
     <motion.div
       className="np-lyr-side"
-      style={{ width }}
+      style={{ width, paddingTop: topInset }}
       initial={{ opacity: 0, x: 18 }}
       animate={{ opacity: 1, x: 0, transition: { duration: 0.24, delay: 0.08 } }}
       exit={{ opacity: 0, x: 18, transition: { duration: 0.12 } }}

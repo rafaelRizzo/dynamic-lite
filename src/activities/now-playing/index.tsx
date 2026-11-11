@@ -220,7 +220,7 @@ function Expanded({ np, topInset, color, lyricsColor, look, volumeOpen, setVolum
     </div>
     <AnimatePresence initial={false}>
       {showLyrics && lyricsOpen && (
-        <LyricsSide key="lyrics" playback={np.playback} track={track} color={lyricsColor} offsetMs={offsetMs} onSeek={np.seek} width={LYRICS_WIDTH} />
+        <LyricsSide key="lyrics" playback={np.playback} track={track} color={lyricsColor} offsetMs={offsetMs} onSeek={np.seek} width={LYRICS_WIDTH} topInset={topInset} />
       )}
     </AnimatePresence>
     </div>

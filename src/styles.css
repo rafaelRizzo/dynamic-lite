@@ -1260,7 +1260,7 @@ body,
   flex: none;
   box-sizing: border-box;
   display: flex;
-  padding: 14px 22px 14px 4px;
+  padding: 0 22px 14px 4px;
 }
 .np-lyr {
   --lyr-ease: cubic-bezier(0.3, 0.8, 0.3, 1);
